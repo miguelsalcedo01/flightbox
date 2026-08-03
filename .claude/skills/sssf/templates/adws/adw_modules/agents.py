@@ -15,13 +15,26 @@ from typing import Optional
 
 import yaml
 
-from . import agent_pi, permissions, prompts
+from . import agent_cc, agent_pi, permissions, prompts
 from .data_types import (AgentCall, AgentConfig, EnvelopeBase, EventRecord,
                          GateCheck, GateReport, Phase, PiRequest, SSSFConfig,
                          UsageBreakdown)
 from .utils import new_id
 
 JSON_FIX_ATTEMPTS = 2      # continue-with-correction attempts for malformed JSON
+
+# The dispatch switch: a coding_agent name resolves to the module that runs it.
+# Both modules fulfill the same contract — run(PiRequest, ...) -> PiResult,
+# a ToolCallTracker, and resolve_model() for validation.
+BACKENDS = {"pi": agent_pi, "claude_code": agent_cc}
+
+
+def backend_for(coding_agent: str):
+    try:
+        return BACKENDS[coding_agent]
+    except KeyError:
+        raise SystemExit(f"coding_agent {coding_agent!r} is not implemented — "
+                         f"available: {sorted(BACKENDS)}") from None
 
 
 class GateFailure(RuntimeError):
@@ -58,15 +71,17 @@ def validate(cfg: SSSFConfig, required: list[str]) -> None:
         except SystemExit as e:
             problems.append(str(e))
             continue
-        if agent.coding_agent != "pi":
-            problems.append(f"agent {name!r}: coding_agent {agent.coding_agent!r} "
-                            f"is not implemented in v1 (pi only)")
+        try:
+            backend = backend_for(agent.coding_agent)
+        except SystemExit as e:
+            problems.append(f"agent {name!r}: {e}")
+            continue
         for label, ref in (("system", agent.prompt_engineering.system),
                            ("user", agent.prompt_engineering.user)):
             if not Path(ref).is_file():
                 problems.append(f"agent {name!r}: {label} prompt not found: {ref}")
         try:
-            agent_pi.resolve_model(agent.model)
+            backend.resolve_model(agent.model)
         except ValueError as e:
             problems.append(f"agent {name!r}: {e}")
     if problems:
@@ -103,9 +118,11 @@ def execute(run, phase: Phase, call: AgentCall) -> EnvelopeBase:
                                           "harness_engineering": agent.harness_engineering}))
     run.console.agent_started(agent.name, agent.model, session_id)
 
-    # Parse retries and gate corrections re-enter the SAME pi session, so the
-    # last send is the one whose context occupancy is current — while spend is
-    # the opposite: every send costs, so usage accumulates across all of them.
+    backend = backend_for(agent.coding_agent)
+
+    # Parse retries and gate corrections re-enter the SAME coding-agent session,
+    # so the last send is the one whose context occupancy is current — while
+    # spend is the opposite: every send costs, so usage accumulates across all.
     latest: agent_pi.PiResult | None = None
     spent = UsageBreakdown()
 
@@ -117,16 +134,16 @@ def execute(run, phase: Phase, call: AgentCall) -> EnvelopeBase:
             model=agent.model,
             thinking=agent.thinking,
             session_id=session_id,
-            # absolute: these are read by the pi subprocess, which runs in repo_root
+            # absolute: these are read by the coding-agent subprocess, which runs in repo_root
             session_dir=str((agent_dir / "pi_sessions").resolve()),
             raw_output_path=str((agent_dir / "raw_output.jsonl").resolve()),
             tools=agent.tools,
             extensions=agent.harness_engineering,
             cwd=str(run.repo_root),
         )
-        result = agent_pi.run(
+        result = backend.run(
             request,
-            on_event=_event_forwarder(run, phase, agent.name),
+            on_event=_event_forwarder(run, phase, agent.name, backend),
             on_spawn=lambda pid: run.tracer.process_start(
                 run.adw_id, "agent", agent.name, pid,
                 f"{agent.coding_agent} {agent.name} {agent.model}"),
@@ -232,21 +249,24 @@ def _agent_session_id(run, agent: AgentConfig) -> str:
     return f"sssf-{run.adw_id}-{agent.name}-{new_id(4)}"
 
 
-def _event_forwarder(run, phase: Phase, agent_name: str):
+def _event_forwarder(run, phase: Phase, agent_name: str, backend=agent_pi):
     """One tool_call event per real tool call, with its exact args and result."""
-    tracker = agent_pi.ToolCallTracker()
+    tracker = backend.ToolCallTracker()
 
     def forward(event: dict) -> None:
-        record = tracker.observe(event)
-        if record is None:
-            return
-        # The call's span rides the columns; duration_ms stays in the payload as
-        # pi's own authoritative number.
-        run.tracer.event(EventRecord(adw_id=run.adw_id, phase_id=phase.phase_id,
-                                     type="tool_call", name=record.pop("label"),
-                                     started_at=record.pop("started_at", None),
-                                     ended_at=record.pop("ended_at", None),
-                                     payload={**record, "agent": agent_name}))
+        # pi's tracker yields one record or None; claude_code's yields a list
+        # (one user message can settle several parallel calls). Normalize both.
+        observed = tracker.observe(event)
+        records = observed if isinstance(observed, list) else \
+            [observed] if observed else []
+        for record in records:
+            # The call's span rides the columns; duration_ms stays in the payload
+            # as the coding agent's own authoritative number.
+            run.tracer.event(EventRecord(adw_id=run.adw_id, phase_id=phase.phase_id,
+                                         type="tool_call", name=record.pop("label"),
+                                         started_at=record.pop("started_at", None),
+                                         ended_at=record.pop("ended_at", None),
+                                         payload={**record, "agent": agent_name}))
     return forward
 
 

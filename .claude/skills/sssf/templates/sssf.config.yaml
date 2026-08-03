@@ -1,12 +1,25 @@
 # sssf.config.yaml — the factory's agent roster. One agent, one prompt, one purpose.
-# v1 runs the Pi coding agent only; coding_agent: claude_code arrives in v2.
+#
+# This fork defaults to coding_agent: claude_code — headless Claude Code
+# (`claude -p`) running on your existing Claude subscription, no API keys.
+# Models are written provider/id; for claude_code the provider is always
+# `anthropic` and the id is what `claude --model` accepts: an alias
+# (opus | sonnet | haiku) or a full model name (claude-sonnet-4-5).
+# The Pi coding agent still works: set coding_agent: pi and a pi model
+# (see the commented pi examples inline below).
 defaults:
-  coding_agent: pi
-  model: google/gemini-3.6-flash   # provider/id — a bare pattern is ambiguous across providers
-  thinking: medium                 # off | minimal | low | medium | high | xhigh | max
-  harness_engineering: []          # pi extensions loaded into the harness (-e)
+  coding_agent: claude_code
+  model: anthropic/sonnet          # provider/id — anthropic/<alias-or-model-id>
+  # coding_agent: pi               # pi variant:
+  # model: google/gemini-3.6-flash #   a bare pattern is ambiguous across providers
+  thinking: medium                 # pi only: off | minimal | low | medium | high | xhigh | max
+                                   # (claude_code manages its own extended thinking; ignored)
+  harness_engineering: []          # pi only: extensions loaded into the harness (-e)
   # Roster-wide allowlist; any agent may override with its own list.
-  # NOTE: --tools filters extension and custom tools too, not just builtins. An agent
+  # Names are pi-style and translated per backend: for claude_code they map to
+  # Claude tools (read→Read, bash→Bash, find→Glob, ls→Bash) and are passed as
+  # --allowedTools so headless runs never stall on a permission prompt.
+  # NOTE (pi): --tools filters extension and custom tools too, not just builtins. An agent
   # whose harness_engineering extension registers a tool MUST name that tool in its own
   # tools list — otherwise the extension loads and its tool is silently filtered out.
   tools:
@@ -38,15 +51,17 @@ observability:
 
 agents:
   - name: planner
-    model: fireworks/accounts/fireworks/models/kimi-k3
+    model: anthropic/opus
+    # model: fireworks/accounts/fireworks/models/kimi-k3   # pi variant
     thinking: high
     color: "#a78bfa"                 # optional hex — the agent's lane color in the visualizer
     purpose: Turn a request into a plan the builder can implement without asking questions.
     prompt_engineering:
       system: adws/adw_data/prompt_engineering/planner/system.md
       user: adws/adw_data/prompt_engineering/planner/user.md
-    harness_engineering:
-      - adws/adw_data/harness_engineering/subagents.ts    # registers the four subagent_* tools below
+    # pi only — claude_code ignores extensions (it has its own subagent Task tool):
+    # harness_engineering:
+    #   - adws/adw_data/harness_engineering/subagents.ts   # registers the four subagent_* tools below
     writes:                        # the plan is the only thing it may leave in the repo
       - specs/
     tools:                         # full recon + write for plan.md; no edit — the planner never touches repo files
@@ -56,12 +71,14 @@ agents:
       - ls
       - bash
       - write
-      - subagent_create            # extension tools MUST be named here or they are filtered out
-      - subagent_continue
-      - subagent_list
-      - subagent_remove
+      # pi extension tools — uncomment with harness_engineering above; claude_code drops them:
+      # - subagent_create          # extension tools MUST be named here or they are filtered out
+      # - subagent_continue
+      # - subagent_list
+      # - subagent_remove
 
   - name: builder
+    model: anthropic/sonnet
     color: "#22d3ee"
     purpose: Implement the plan exactly; report every changed file in the envelope.
     prompt_engineering:
@@ -79,13 +96,15 @@ agents:
       - write
 
   - name: scout
+    model: anthropic/haiku
     color: "#fbbf24"
     purpose: Find and report where things live; change nothing.
     prompt_engineering:
       system: adws/adw_data/prompt_engineering/scout/system.md
       user: adws/adw_data/prompt_engineering/scout/user.md
-    harness_engineering:
-      - adws/adw_data/harness_engineering/subagents.ts    # registers the four subagent_* tools below
+    # pi only — claude_code ignores extensions (it has its own subagent Task tool):
+    # harness_engineering:
+    #   - adws/adw_data/harness_engineering/subagents.ts   # registers the four subagent_* tools below
     writes: []                     # read-only, and now actually read-only: its findings
                                    # go to context_handoff/, which is runtime, not the repo
     tools:                         # search-heavy recon; write only so scout_findings.md lands without a bash heredoc
@@ -95,16 +114,18 @@ agents:
       - ls
       - bash
       - write
-      - subagent_create            # extension tools MUST be named here or they are filtered out
-      - subagent_continue
-      - subagent_list
-      - subagent_remove
+      # pi extension tools — uncomment with harness_engineering above; claude_code drops them:
+      # - subagent_create          # extension tools MUST be named here or they are filtered out
+      # - subagent_continue
+      # - subagent_list
+      # - subagent_remove
 
   # No tester agent: running the suite is a known command, so it is a kind="code"
   # phase over adw_modules/quality.py. See SKILL.md hard rule 8.
 
   - name: reviewer
-    model: openai/gpt-5.6-terra
+    model: anthropic/sonnet
+    # model: openai/gpt-5.6-terra  # pi variant
     thinking: high
     color: "#fb7185"
     purpose: Confirm that what was built is what was asked for; change nothing.
@@ -122,7 +143,8 @@ agents:
       - write
 
   - name: documenter
-    model: openai/gpt-5.6-luna
+    model: anthropic/sonnet
+    # model: openai/gpt-5.6-luna   # pi variant
     color: "#e879f9"
     purpose: Write up the change that was just made, from the diff; document only.
     prompt_engineering:
