@@ -15,16 +15,26 @@ Flightbox is a managed runway for agent workflows (ADWs — AI Developer Workflo
 
 ## Install
 
+One line, from the root of the repo you want governed:
+
 ```bash
-mkdir -p .claude/skills
-cp -r /path/to/flightbox/.claude/skills/flightbox .claude/skills/
-uv run .claude/skills/flightbox/scripts/install.py   # run from the target repo root
-cp .env.sample .env                                  # set your provider API keys
+curl -fsSL https://raw.githubusercontent.com/miguelsalcedo01/flightbox/main/get-flightbox.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/miguelsalcedo01/flightbox/main/get-flightbox.ps1 | iex
+```
+
+That fetches the skill, stamps the factory (idempotent — existing files are never overwritten), and preps `.env`. Then:
+
+```bash
 just demo                                            # smoke test: two cheap read-only runs
 just obs                                             # the replay UI (needs bun)
 ```
 
-Or agentically: copy the skill in and type `/flightbox install` inside Claude Code.
+Already have a checkout, or working offline? Point the bootstrapper at it: `FLIGHTBOX_REPO=/path/to/flightbox sh get-flightbox.sh`. Manual install is still just two steps: copy `.claude/skills/flightbox` into your repo and run `uv run .claude/skills/flightbox/scripts/install.py`. Or agentically: copy the skill in and type `/flightbox install` inside Claude Code.
 
 **Prereqs:** [`uv`](https://docs.astral.sh/uv/), `sqlite3`, and either [`pi`](https://github.com/mariozechner/pi-coding-agent) or Claude Code as the coding-agent backend. [`bun`](https://bun.sh) for the visualizer.
 
