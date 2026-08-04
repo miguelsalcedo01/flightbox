@@ -49,6 +49,8 @@ def ensure(cfg: FLIGHTBOXConfig, adw_id: str | None = None) -> Run:
     _finalize_when_killed(run)
     run.console.session_started(adw_id, run.engineer)
     # What this ADW usually costs, said before it spends — history read back
-    # at launch, with a warning when the p90 already clears max_run_cost.
+    # at launch, with a warning when the p90 already clears max_run_cost —
+    # and where the month stands, when a month_budget draws that line.
     estimates.announce(run, Path(sys.argv[0]).stem)
+    estimates.announce_month(run)
     return run

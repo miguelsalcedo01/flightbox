@@ -69,6 +69,11 @@ class Run:
         # agent name; a joined run (--adw-id) starts these at zero, so caps are
         # per-invocation, not per-lifetime-of-session.
         self.agent_cost: dict[str, float] = {}
+        # Approach warnings already given ("run:75", "agent:planner:90") — a
+        # threshold speaks once. You cannot stop a send mid-flight, so the
+        # useful thing is seeing the line coming, not hearing about it again
+        # on every call after.
+        self._budget_warned: set[str] = set()
         self._seq = tracer.max_phase_seq(adw_id)   # a joined run continues the sequence
         self.repo_root = git_helper.repo_root()    # where every agent is spawned to work
         self.session_dir = ensure_dir(Path(cfg.defaults.data_dir) / "sessions" / adw_id)
@@ -111,6 +116,7 @@ class Run:
                 breaches.append(f"agent {agent!r} spend ${spent:.4f} "
                                 f"exceeds max_cost ${agent_cap:.4f}")
         if not breaches:
+            self._warn_if_approaching(agent)
             return
         phase_id = self.phases[-1].phase_id if self.phases else ""
         self.tracer.event(EventRecord(
@@ -122,6 +128,40 @@ class Run:
                      "max_run_cost": self.cfg.defaults.max_run_cost}))
         self.console.note("BUDGET EXCEEDED — halting run: " + "; ".join(breaches))
         raise BudgetExceeded("; ".join(breaches))
+
+    # A send cannot be stopped mid-flight — once the call is made, its cost is
+    # committed. So the governor's second job is foresight: say "the line is
+    # close" while there is still a send boundary left to act on.
+    WARN_STEPS = (0.90, 0.75)      # checked highest first; each speaks once
+
+    def _warn_if_approaching(self, agent: str) -> None:
+        scopes = [("run", self.cost, self.cfg.defaults.max_run_cost)]
+        if agent:
+            spec = next((a for a in self.cfg.agents if a.name == agent), None)
+            if spec is not None:
+                scopes.append((f"agent:{agent}", self.agent_cost.get(agent, 0.0),
+                               spec.max_cost))
+        for scope, spent, cap in scopes:
+            if not cap:
+                continue
+            for step in self.WARN_STEPS:
+                key = f"{scope}:{int(step * 100)}"
+                if spent / cap < step or key in self._budget_warned:
+                    continue
+                # Mark this step AND every lower one: crossing 90% cold must
+                # not queue a stale 75% warning behind it.
+                self._budget_warned.update(
+                    f"{scope}:{int(s * 100)}" for s in self.WARN_STEPS if s <= step)
+                phase_id = self.phases[-1].phase_id if self.phases else ""
+                self.tracer.event(EventRecord(
+                    adw_id=self.adw_id, phase_id=phase_id,
+                    type="log", name="budget_warning",
+                    payload={"scope": scope, "threshold": step, "spent": spent,
+                             "cap": cap, "fraction": spent / cap}))
+                self.console.note(
+                    f"BUDGET WARNING — {scope} at {spent / cap:.0%} of its"
+                    f" ${cap:.2f} cap (${spent:.4f} spent)")
+                break
 
     # ── the phase primitive ─────────────────────────────────────────────────
     @contextmanager

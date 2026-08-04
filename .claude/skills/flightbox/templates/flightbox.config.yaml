@@ -49,6 +49,10 @@ defaults:
   # Enforcement is at call boundaries — one send is the smallest unit of spend.
   # Per-agent caps go on the agent entry as `max_cost`. Both default to uncapped.
   # max_run_cost: 5.00             # dollars, the whole run: every agent, phase, retry
+  # A BUDGET warns and projects; a CAP halts. month_budget is advisory: every
+  # launch reports month-to-date spend, the last-7-days daily pace, and the
+  # projected month-end, warning at 75% / exhausted / pace-says-over.
+  # month_budget: 100.00           # dollars per calendar month, all runs in this repo
 
 observability:
   db: adws/adw_data/flightbox.db        # tracer writes here directly; the UI polls it

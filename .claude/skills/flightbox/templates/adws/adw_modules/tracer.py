@@ -252,6 +252,23 @@ class Tracer:
             (adw_name, limit)).fetchall()
         return [row[0] for row in rows]
 
+    def month_cost(self, month: str) -> float:
+        """Dollars across ALL sessions started in a month ('2026-08'), running
+        ones included — money already spent counts toward the budget whether
+        or not the run that spent it has finished."""
+        row = self.conn.execute(
+            "SELECT COALESCE(SUM(total_cost),0) FROM sessions"
+            " WHERE substr(started_at,1,7)=?", (month,)).fetchone()
+        return float(row[0] or 0.0)
+
+    def recent_cost(self, days: int = 7) -> float:
+        """Dollars across all sessions started in the last N days — the raw
+        material for the daily-pace projection."""
+        row = self.conn.execute(
+            "SELECT COALESCE(SUM(total_cost),0) FROM sessions"
+            " WHERE started_at >= datetime('now', ?)", (f"-{days} days",)).fetchone()
+        return float(row[0] or 0.0)
+
     # ── approvals (the run writes the request; a human settles it) ──────────
     def approval_request(self, phase: Phase, name: str, description: str,
                          details_json: str) -> str:

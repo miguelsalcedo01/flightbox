@@ -365,6 +365,13 @@ class ConfigDefaults(BaseModel):
     # every retry, summed. None -> uncapped. Same boundary semantics as the
     # per-agent `max_cost`: the crossing send is billed, the next never starts.
     max_run_cost: Optional[float] = None
+    # Advisory monthly spend budget in dollars, across every run this trace db
+    # records. A BUDGET (this) warns and projects; a CAP (max_run_cost /
+    # max_cost) halts. Deliberately not enforced: a month boundary is the wrong
+    # place to kill a half-finished run — instead every launch reports
+    # month-to-date, the last-7-days daily pace, and where that pace lands the
+    # month, so the engineer sees the line long before anything crosses it.
+    month_budget: Optional[float] = None
 
 
 class ObservabilityConfig(BaseModel):

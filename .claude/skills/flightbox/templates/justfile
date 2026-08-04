@@ -79,6 +79,11 @@ tail ADW_ID:
 procs ADW_ID:
     @sqlite3 {{db}} "select kind, name, pid, command, started_at from processes where adw_id='{{ADW_ID}}' and ended_at is null order by id;"
 
+# month-to-date spend and the last 7 days' daily pace
+month:
+    @sqlite3 {{db}} "select substr(started_at,1,7) as month, count(*) as runs, round(sum(total_cost),2) as spent from sessions where substr(started_at,1,7)=strftime('%Y-%m','now') group by month;"
+    @sqlite3 {{db}} "select 'last 7 days: $' || round(coalesce(sum(total_cost),0),2) || '  (~$' || round(coalesce(sum(total_cost),0)/7.0,2) || '/day)' from sessions where started_at >= datetime('now','-7 days');"
+
 # ── approvals (settle a run blocked on a human gate) ────────────────────────
 # A headless run with an approval phase parks on a pending row and polls it.
 # These settle that row from any terminal; the run notices within poll_seconds.

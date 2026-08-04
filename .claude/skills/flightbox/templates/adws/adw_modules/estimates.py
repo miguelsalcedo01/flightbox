@@ -14,11 +14,33 @@ on its budget" before the first token is bought, not from the halt itself.
 
 from __future__ import annotations
 
+import calendar
+import datetime
 import math
+from typing import Optional
 
 from pydantic import BaseModel
 
 from .data_types import EventRecord
+
+
+class MonthStatus(BaseModel):
+    """Where the month stands, and where today's pace lands it.
+
+    `daily_pace` is the last 7 days averaged — recent behavior, not the
+    month's, so a quiet first week does not hide a loud third one. The
+    projection is that pace ridden to month-end on top of what is already
+    spent. Advisory by design: the month reports, the run caps halt.
+    """
+
+    month: str                      # "2026-08"
+    spent: float                    # month-to-date, running sessions included
+    budget: float
+    fraction: float                 # spent / budget
+    daily_pace: float               # last-7-days dollars / 7
+    days_remaining: int             # full days left after today
+    projected: float                # spent + daily_pace * days_remaining
+    likely_over: bool               # projected > budget
 
 
 class CostEstimate(BaseModel):
@@ -67,6 +89,49 @@ def announce(run, adw_name: str) -> CostEstimate:
             f"WARNING: p90 ${est.p90_cost:.4f} exceeds max_run_cost ${cap:.4f}"
             f" — this run will likely halt on its budget cap")
     return est
+
+
+def month_status(tracer, budget: float,
+                 today: Optional[datetime.date] = None) -> MonthStatus:
+    """Compute the month's standing. `today` is injectable for tests."""
+    today = today or datetime.date.today()
+    month = today.strftime("%Y-%m")
+    spent = tracer.month_cost(month)
+    days_remaining = calendar.monthrange(today.year, today.month)[1] - today.day
+    pace = tracer.recent_cost(7) / 7.0
+    projected = spent + pace * days_remaining
+    return MonthStatus(
+        month=month, spent=spent, budget=budget,
+        fraction=(spent / budget) if budget else 0.0,
+        daily_pace=pace, days_remaining=days_remaining,
+        projected=projected, likely_over=projected > budget)
+
+
+def announce_month(run, today: Optional[datetime.date] = None) -> Optional[MonthStatus]:
+    """Report the month at launch — only when a month_budget is configured,
+    because a projection against no budget is just a number with no line."""
+    budget = run.cfg.defaults.month_budget
+    if not budget:
+        return None
+    ms = month_status(run.tracer, budget, today)
+    run.tracer.event(EventRecord(
+        adw_id=run.adw_id, type="log", name="month_budget",
+        payload=ms.model_dump()))
+    run.console.note(
+        f"month budget ({ms.month}): ${ms.spent:.2f} of ${ms.budget:.2f}"
+        f" spent ({min(ms.fraction, 9.99):.0%}) · pace ${ms.daily_pace:.2f}/day"
+        f" · projected month-end ${ms.projected:.2f}")
+    if ms.fraction >= 1.0:
+        run.console.note(f"WARNING: the month budget is exhausted"
+                         f" — ${ms.spent - ms.budget:.2f} over")
+    elif ms.fraction >= 0.75:
+        run.console.note(f"WARNING: {ms.fraction:.0%} of the month budget is spent"
+                         f" with {ms.days_remaining} day(s) still to go")
+    elif ms.likely_over:
+        run.console.note(
+            f"WARNING: at the last 7 days' pace this month ends at"
+            f" ${ms.projected:.2f}, over the ${ms.budget:.2f} budget")
+    return ms
 
 
 def _percentile(ascending: list[float], q: float) -> float:
