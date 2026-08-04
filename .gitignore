@@ -158,3 +158,5 @@ flightbox.db*
 apps/inkwell/inkwell.db*
 
 *.mov
+# wrangler build cache (contains account metadata)
+.wrangler/
