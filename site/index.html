@@ -224,8 +224,45 @@ h1,h2,h3{line-height:1.15}
 .tier.featured{background:#0c1526;border-color:rgba(74,222,128,.35);box-shadow:0 0 44px rgba(74,222,128,.08)}
 .badge{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;background:var(--phos);color:#06110a;
   padding:.18rem .5rem;border-radius:3px;margin-left:.6rem;vertical-align:middle}
-.gate-note{margin-top:2.2rem;text-align:center;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--faint)}
+.gate-note{margin-top:2.2rem;text-align:center;font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;color:var(--faint);line-height:2}
 .gate-note b{color:var(--dim);font-weight:400}
+.soon-key{display:inline-block;width:.5rem;height:.5rem;border:1px solid var(--amber);border-radius:2px;margin-right:.45rem;vertical-align:baseline}
+
+/* honest disclosure above the tiers */
+.notice{margin:2.2rem auto 0;max-width:760px;border:1px solid rgba(232,182,74,.38);
+  border-left:3px solid var(--amber);background:rgba(232,182,74,.05);padding:1.1rem 1.3rem;text-align:left}
+.notice p{color:var(--dim);font-size:.92rem;margin:0}
+.notice b{color:var(--amber);font-weight:700}
+
+/* a feature that does not exist yet — never let it read as shipped */
+.tier li.soon{color:var(--faint)}
+.tier li.soon::before{content:"";position:absolute;left:1px;top:.78em;width:.5rem;height:.5rem;
+  border:1px solid var(--amber);border-radius:2px;opacity:.75}
+.badge.ghost{background:transparent;border:1px solid var(--amber);color:var(--amber)}
+
+/* enterprise strip */
+.ent-strip{margin-top:1.1rem;border:1px solid var(--line);background:var(--panel);border-top:3px solid var(--purple);
+  padding:1.5rem 1.6rem;display:flex;align-items:center;gap:1.6rem;text-align:left;flex-wrap:wrap}
+.ent-copy{flex:1;min-width:260px}
+.ent-copy h3{font-family:var(--disp);font-weight:500;font-size:1.02rem;color:var(--purple);margin-bottom:.4rem}
+.ent-copy p{color:var(--dim);font-size:.93rem;margin:0}
+.ent-strip .btn{white-space:nowrap}
+
+/* waitlist */
+.waitlist{margin:2.4rem auto 0;max-width:560px}
+.waitlist form{margin-top:1.1rem}
+.waitlist form{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.wl-label{flex-basis:100%;font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:.1rem;text-align:left}
+.waitlist input{flex:1;min-width:220px;padding:.8rem 1rem;border-radius:6px;border:1px solid var(--line);
+  background:#070c16;color:var(--text);font-family:var(--body);font-size:.95rem}
+.waitlist input::placeholder{color:var(--faint)}
+.waitlist input:focus{outline:none;border-color:var(--phos);box-shadow:0 0 0 3px rgba(74,222,128,.14)}
+.waitlist .btn{padding:.8rem 1.4rem}
+.wl-msg{margin-top:.7rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;min-height:1.2em}
+.wl-msg.ok{color:var(--phos)}
+.wl-msg.err{color:var(--warn)}
+.wl-hint{margin-top:.5rem;font-size:.8rem;color:var(--faint)}
 
 /* how */
 .steps{margin-top:3rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem}
@@ -446,59 +483,75 @@ footer p{max-width:72ch;margin:.4rem auto}
 <section class="section tall" id="pricing">
   <div class="wrap center">
     <p class="kicker">Pricing</p>
-    <h2 class="sec">Start free. Pay when the whole team flies.</h2>
-    <p class="sec-sub">Seeing what your agents did is $99. Deciding what they may do is $499. The core is open source, forever.</p>
+    <h2 class="sec">The core is free. Forever.</h2>
+    <p class="sec-sub">Recording, replay, budget gates, approvals and cost estimates are all in the open-source core — yours today, at no cost, under MIT. Paid plans are founding-member places in <b>Flightbox Cloud</b>, the hosted layer for teams. Cloud is in active development.</p>
+
+    <div class="notice">
+      <p><b>Read this before you pay.</b> Flightbox Cloud has not shipped yet. A founding
+      membership funds its development and locks your rate for the life of your subscription —
+      it does not unlock anything in the open-source core, because nothing in the core is locked.
+      Everything Flightbox does today, it does for free. Cancel any time.</p>
+    </div>
+
     <div class="tiers">
-      <div class="tier t-free">
-        <h3>Free</h3>
+      <div class="tier t-free featured">
+        <h3>Core<span class="badge">EVERYTHING, TODAY</span></h3>
         <p class="price">$0</p>
-        <p class="per">OSS CORE · FOREVER</p>
+        <p class="per">OPEN SOURCE · MIT · FOREVER</p>
         <ul>
           <li>Stamp the factory into any repo</li>
-          <li>Local SQLite trace</li>
-          <li>Engineer visualizer</li>
+          <li>Full trace of every tool call, prompt &amp; dollar</li>
+          <li>Session replay UI + spend roll-ups</li>
+          <li>Budget gates that halt the run</li>
+          <li>Approval gates &amp; pre-run cost estimates</li>
         </ul>
-        <a class="btn btn-ghost" href="https://github.com/miguelsalcedo01/flightbox">Clone it</a>
+        <a class="btn btn-primary" href="https://github.com/miguelsalcedo01/flightbox">Install it free →</a>
       </div>
       <div class="tier t-rec">
-        <h3>Recorder</h3>
+        <h3>Recorder<span class="badge ghost">FOUNDING</span></h3>
         <p class="price">$99</p>
-        <p class="per">PER MONTH · $990/YR ANNUAL</p>
+        <p class="per">PER MONTH · $990/YR · RATE LOCKED</p>
         <ul>
-          <li>Hosted replay across repos &amp; teammates</li>
-          <li>Plain-language timelines</li>
-          <li>Spend roll-ups by agent / workflow / day</li>
-          <li>Trace retention</li>
+          <li>Everything in Core, free forever</li>
+          <li class="soon">Hosted replay across repos &amp; teammates</li>
+          <li class="soon">Spend roll-ups across every project</li>
+          <li class="soon">Trace retention &amp; history</li>
         </ul>
-        <a class="btn btn-ghost" href="https://buy.stripe.com/7sY5kC5hEbiU4UZemg4Vy00">Start 14-day free trial</a>
+        <a class="btn btn-ghost" href="https://buy.stripe.com/7sY5kC5hEbiU4UZemg4Vy00">Become a founding member</a>
       </div>
-      <div class="tier t-gov featured">
-        <h3>Governance<span class="badge">POPULAR</span></h3>
+      <div class="tier t-gov">
+        <h3>Governance<span class="badge ghost">FOUNDING</span></h3>
         <p class="price">$499</p>
-        <p class="per">PER MONTH · $4,990/YR ANNUAL</p>
+        <p class="per">PER MONTH · $4,990/YR · RATE LOCKED</p>
         <ul>
           <li>Everything in Recorder</li>
-          <li>Budget gates &amp; hard halts</li>
-          <li>Approval workflows</li>
-          <li>Pre-run estimates &amp; alerts</li>
-          <li>Per-repo policy files</li>
+          <li class="soon">Org-wide policy across every repo</li>
+          <li class="soon">Team approval routing</li>
+          <li class="soon">Threshold alerts — Slack, webhook, email</li>
+          <li class="soon">Finance export &amp; cost-center mapping</li>
         </ul>
-        <a class="btn btn-primary" href="https://buy.stripe.com/7sY6oG9xUfzafzD2Dy4Vy01">Start 14-day free trial</a>
-      </div>
-      <div class="tier t-ent">
-        <h3>Enterprise</h3>
-        <p class="price">Custom</p>
-        <p class="per">TALK TO US</p>
-        <ul>
-          <li>Everything in Governance</li>
-          <li>SSO</li>
-          <li>SOC 2 posture</li>
-          <li>Finance exports</li>
-        </ul>
-        <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Enterprise">Contact us</a>
+        <a class="btn btn-ghost" href="https://buy.stripe.com/7sY6oG9xUfzafzD2Dy4Vy01">Become a founding member</a>
       </div>
     </div>
-    <p class="gate-note">14-DAY FREE TRIAL ON BOTH PAID TIERS · <b>CANCEL ANY TIME</b> · FLAT PER-ORG PRICING</p>
+
+    <div class="ent-strip">
+      <div class="ent-copy">
+        <h3>Enterprise</h3>
+        <p>Everything in Governance, plus SSO, SOC&nbsp;2 posture and private hosting — scoped with you, priced per org. Also in development; talk to me early and you shape it.</p>
+      </div>
+      <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Enterprise">Contact us</a>
+    </div>
+    <div class="waitlist">
+      <p class="gate-note" style="margin-top:0"><span class="soon-key"></span> NOT YET AVAILABLE — SHIPS WITH FLIGHTBOX CLOUD</p>
+      <form id="wlForm" novalidate>
+        <label class="wl-label" for="wlEmail">Your email</label>
+        <input id="wlEmail" type="email" name="email" required autocomplete="email">
+        <button class="btn btn-primary" type="submit" id="wlBtn">Tell me when Cloud ships</button>
+      </form>
+      <p class="wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
+      <p class="wl-hint">No charge, no account — this opens your mail app so you send it yourself, which means I never collect anything you didn't choose to send. One reply when Cloud opens, and nothing else.</p>
+    </div>
+    <p class="gate-note">14 DAYS BEFORE YOUR FIRST CHARGE · <b>CANCEL ANY TIME</b> · RATE LOCKED FOR THE LIFE OF YOUR SUBSCRIPTION</p>
   </div>
 </section>
 
@@ -645,7 +698,19 @@ footer p{max-width:72ch;margin:.4rem auto}
       </details>
       <details>
         <summary>Where does my trace data live?</summary>
-        <p>On the free OSS core, everything is local: a SQLite trace in your repo, viewed with the local visualizer. Paid tiers add hosted replay so teammates can share timelines across repos — that's the part you pay for, not the recording itself.</p>
+        <p>Entirely on your machine: a SQLite trace inside your repo, read by a local UI. Nothing is sent anywhere — there is no account and no server involved. Flightbox Cloud will add an <em>optional</em> hosted store so teammates can share timelines across repos; until you opt into that, your traces never leave your disk.</p>
+      </details>
+      <details>
+        <summary>What exactly do I get for $99 or $499 today?</summary>
+        <p>A locked-in rate and a founding place in Flightbox Cloud — plus the knowledge that you funded it. You do <strong>not</strong> get extra features in the core, because the core has no locked features: budget gates, approval gates, cost estimates, replay and roll-ups are all in the free MIT release right now. If you want the software, take it for free. Pay only if you want the hosted team layer to exist and want your price fixed before it does.</p>
+      </details>
+      <details>
+        <summary>When does Flightbox Cloud ship?</summary>
+        <p>It's in active development and I won't quote a date I can't stand behind. Your card isn't charged for 14 days, you can cancel any time from the receipt Stripe emails you, and if you're still waiting longer than you think is reasonable, email me and I'll refund you — no argument.</p>
+      </details>
+      <details>
+        <summary>If the core is MIT and free, what stops me just self-hosting all of it?</summary>
+        <p>Nothing, and that's deliberate. Fork it, run it, modify it, ship it inside your own product — MIT means what it says. Cloud is worth paying for only if you'd rather not run a shared trace store, auth, and alerting yourself. That's the honest trade, and if self-hosting suits you better, take the free core with my blessing.</p>
       </details>
     </div>
   </div>
@@ -655,10 +720,10 @@ footer p{max-width:72ch;margin:.4rem auto}
   <div class="wrap">
     <p class="kicker">Cleared to operate</p>
     <h2 class="sec">Let your agents fly. Keep the handle.</h2>
-    <p class="sec-sub" style="margin-left:auto;margin-right:auto">Recording is free forever. Governance starts the day your first run needs a hard stop.</p>
+    <p class="sec-sub" style="margin-left:auto;margin-right:auto">One command stamps it into any repo. Recording, replay and hard budget stops cost nothing and always will — no account, no key, no catch.</p>
     <div class="cta-row">
-      <a class="btn btn-primary" href="https://buy.stripe.com/7sY6oG9xUfzafzD2Dy4Vy01">Start Governance trial</a>
-      <a class="btn btn-ghost" href="https://github.com/miguelsalcedo01/flightbox">Get the OSS core →</a>
+      <a class="btn btn-primary" href="https://github.com/miguelsalcedo01/flightbox">Install the core — free →</a>
+      <a class="btn btn-ghost" href="#pricing">Back the build</a>
     </div>
   </div>
 </section>
@@ -688,6 +753,33 @@ else if ('IntersectionObserver' in window){
   });},{rootMargin:'0px 0px -12% 0px',threshold:.12});
   sections.forEach(function(s){ io.observe(s); });
 } else { sections.forEach(function(s){ s.classList.add('in'); }); }
+
+/* ---------- Cloud waitlist ----------
+   Interim transport: opens the visitor's mail client with the message prefilled,
+   so a signup always reaches a real inbox. Swap the submit handler for a POST to
+   /api/waitlist once the KV namespace exists — see WAITLIST.md. */
+(function(){
+  var form=document.getElementById('wlForm');
+  if(!form) return;
+  var input=document.getElementById('wlEmail'), msg=document.getElementById('wlMsg');
+  var VALID=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var email=input.value.trim();
+    if(!VALID.test(email)){
+      msg.className='wl-msg err';
+      msg.textContent='THAT EMAIL DOESN’T LOOK RIGHT — CHECK IT?';
+      input.focus();
+      return;
+    }
+    var subject='Flightbox Cloud waitlist',
+        body='Add me to the Flightbox Cloud waitlist.\n\nEmail: '+email+'\n';
+    window.location.href='mailto:miguel.salcedo01@gmail.com?subject='+
+      encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    msg.className='wl-msg ok';
+    msg.textContent='✓ YOUR MAIL APP IS OPENING — HIT SEND AND YOU’RE ON THE LIST';
+  });
+})();
 
 /* ---------- terminal cast ---------- */
 (function(){
