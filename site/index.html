@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flightbox — Flight recorder + spend governor for AI agent workflows</title>
+<meta name="description" content="Flightbox records every tool call, prompt, and dollar your AI agents spend — and halts the run before the budget is gone.">
+<style>
+  :root{
+    --bg:#06080f; --bg2:#0a0e19; --panel:#0d1220; --line:#1c2436;
+    --text:#f2f5fa; --dim:#8a94a8; --faint:#535d72;
+    --green:#4ade80; --red:#ff6f67; --blue:#6cb6ff; --amber:#e8b64a;
+    --purple:#c89bff; --cyan:#5ad2dd;
+    --mono:"Cascadia Code","SF Mono",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:"Play","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3{line-height:1.2;font-weight:700}
+  section{padding:4.5rem 1.5rem;max-width:1100px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:.75rem}
+  .btn{display:inline-block;padding:.8rem 1.6rem;border-radius:8px;font-weight:700;font-size:.95rem;border:1px solid transparent;transition:transform .15s,box-shadow .15s}
+  .btn:hover{text-decoration:none;transform:translateY(-2px)}
+  .btn-primary{background:var(--green);color:#06110a}
+  .btn-primary:hover{box-shadow:0 4px 24px rgba(74,222,128,.35)}
+  .btn-ghost{border-color:var(--line);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+  .mono{font-family:var(--mono)}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;max-width:1100px;margin:0 auto;flex-wrap:wrap;gap:.75rem}
+  .logo{font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--text)}
+  .logo:hover{text-decoration:none}
+  .logo .dot{color:var(--red)}
+  nav ul{display:flex;gap:1.4rem;list-style:none;flex-wrap:wrap}
+  nav ul a{color:var(--dim);font-size:.9rem}
+  nav ul a:hover{color:var(--text);text-decoration:none}
+
+  /* hero */
+  .hero{text-align:center;padding-top:4rem;padding-bottom:3rem;
+    background:linear-gradient(rgba(6,8,15,.42),rgba(6,8,15,.96)),url(hero.png) center/cover no-repeat;
+    border-bottom:1px solid var(--line)}
+  .hero h1{font-size:clamp(2rem,5.5vw,3.4rem);max-width:850px;margin:0 auto 1.2rem}
+  .hero h1 em{font-style:normal;color:var(--green)}
+  .hero h1 .halt{color:var(--red)}
+  .hero p.sub{color:var(--dim);font-size:1.12rem;max-width:680px;margin:0 auto 2rem}
+  .cta-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:3.5rem}
+  .hero-viz{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem;max-width:900px;margin:0 auto;overflow-x:auto}
+  .hero-viz svg{display:block;min-width:640px;width:100%;height:auto}
+
+  /* problem */
+  .problem{text-align:center}
+  .problem blockquote{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:700;max-width:780px;margin:0 auto 1.5rem;color:var(--text)}
+  .problem blockquote span{color:var(--red)}
+  .problem p{color:var(--dim);max-width:700px;margin:0 auto}
+  .stat-row{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;margin-top:2.5rem}
+  .stat{font-family:var(--mono)}
+  .stat b{display:block;font-size:1.6rem}
+  .stat span{color:var(--faint);font-size:.8rem}
+
+  /* how */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;margin-top:2.5rem}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.6rem}
+  .step .num{font-family:var(--mono);color:var(--faint);font-size:.8rem;letter-spacing:.15em}
+  .step h3{margin:.5rem 0 .6rem;font-size:1.15rem}
+  .step p{color:var(--dim);font-size:.92rem}
+  .step code{font-family:var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.15rem .45rem;font-size:.82rem;color:var(--cyan)}
+
+  /* features */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:2.5rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.6rem;border-top:3px solid var(--line)}
+  .card h3{font-size:1.05rem;margin-bottom:.6rem}
+  .card p{color:var(--dim);font-size:.92rem}
+  .card.c-blue{border-top-color:var(--blue)} .card.c-green{border-top-color:var(--green)}
+  .card.c-red{border-top-color:var(--red)} .card.c-amber{border-top-color:var(--amber)}
+  .card.c-purple{border-top-color:var(--purple)}
+  .card .tag{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;display:inline-block;margin-bottom:.6rem}
+  .c-blue .tag{color:var(--blue)} .c-green .tag{color:var(--green)} .c-red .tag{color:var(--red)}
+  .c-amber .tag{color:var(--amber)} .c-purple .tag{color:var(--purple)}
+
+  /* terminal */
+  .term{background:#050710;border:1px solid var(--line);border-radius:12px;max-width:860px;margin:2.5rem auto 0;overflow:hidden}
+  .term-bar{display:flex;gap:.45rem;padding:.7rem 1rem;border-bottom:1px solid var(--line);align-items:center}
+  .term-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .term-bar .t{margin-left:.6rem;color:var(--faint);font-family:var(--mono);font-size:.75rem}
+  .term pre{padding:1.2rem 1.3rem;font-family:var(--mono);font-size:.82rem;line-height:1.65;overflow-x:auto;color:var(--dim);white-space:pre}
+  .term .g{color:var(--green)} .term .r{color:var(--red)} .term .b{color:var(--blue)}
+  .term .a{color:var(--amber)} .term .p{color:var(--purple)} .term .c{color:var(--cyan)}
+  .term .w{color:var(--text)}
+  .term pre .line{opacity:0}
+  .term pre .line.on{opacity:1;transition:opacity .25s}
+  .cursor{display:inline-block;width:.55em;height:1em;background:var(--green);vertical-align:text-bottom;animation:blink 1.1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* pricing */
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.5rem;margin-top:2.5rem}
+  .tier{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1.8rem 1.5rem;display:flex;flex-direction:column}
+  .tier.featured{border-color:var(--green);box-shadow:0 0 32px rgba(74,222,128,.12)}
+  .tier h3{font-size:1rem;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+  .tier .price{font-family:var(--mono);font-size:1.9rem;font-weight:700;margin:.7rem 0 .2rem}
+  .tier .per{color:var(--faint);font-size:.8rem;margin-bottom:1.1rem}
+  .tier ul{list-style:none;flex:1;margin-bottom:1.4rem}
+  .tier li{color:var(--dim);font-size:.88rem;padding:.32rem 0 .32rem 1.3rem;position:relative}
+  .tier li::before{content:"▸";position:absolute;left:0;color:var(--green)}
+  .tier .btn{text-align:center}
+  .badge{font-family:var(--mono);font-size:.65rem;background:var(--green);color:#06110a;border-radius:99px;padding:.15rem .6rem;letter-spacing:.1em;margin-left:.5rem;vertical-align:middle}
+
+  /* faq */
+  .faq details{border:1px solid var(--line);border-radius:10px;margin-top:1rem;background:var(--panel)}
+  .faq summary{cursor:pointer;padding:1.1rem 1.3rem;font-weight:700;font-size:.98rem;list-style:none;position:relative;padding-right:2.5rem}
+  .faq summary::after{content:"+";position:absolute;right:1.2rem;top:50%;transform:translateY(-50%);color:var(--cyan);font-family:var(--mono);font-size:1.2rem}
+  .faq details[open] summary::after{content:"–"}
+  .faq details p{padding:0 1.3rem 1.2rem;color:var(--dim);font-size:.92rem}
+
+  footer{border-top:1px solid var(--line);padding:2.5rem 1.5rem;text-align:center;color:var(--faint);font-size:.82rem}
+  footer p{max-width:720px;margin:0 auto .6rem}
+
+  h2.sec{font-size:clamp(1.5rem,3.5vw,2.1rem);text-align:center}
+  .sec-sub{color:var(--dim);text-align:center;max-width:640px;margin:.8rem auto 0}
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .cursor{animation:none}
+    .term pre .line{opacity:1;transition:none}
+    .btn:hover{transform:none}
+    svg animate,svg animateTransform{display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <a class="logo" href="#top">flightbox<span class="dot">■</span>rec</a>
+  <ul>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="https://github.com/miguelsalcedo01/flightbox">GitHub</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <p class="kicker">Flight recorder + spend governor for AI agents</p>
+  <h1>Your agents are flying blind.<br><em>Record every move.</em> <span class="halt">Halt the spend.</span></h1>
+  <p class="sub">Teams running AI agents have no audit trail — the invoice is the first sign something went wrong. Flightbox runs your agent pipelines through a managed runway: deterministic Python owns the loop, so it can record everything and actually <strong>stop</strong> agents, not just watch them.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="https://github.com/miguelsalcedo01/flightbox">Get the OSS core →</a>
+    <a class="btn btn-ghost" href="#pricing">See pricing</a>
+  </div>
+
+  <div class="hero-viz">
+    <svg viewBox="0 0 880 340" role="img" aria-labelledby="wf-title wf-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="wf-title">Trace waterfall of an agent run</title>
+      <desc id="wf-desc">A session-replay waterfall with four agent lanes showing tool-call bars over time, ending in a red BUDGET HALT marker where the run was stopped at the cost cap.</desc>
+      <rect width="880" height="340" fill="#0d1220" rx="8"/>
+      <text x="24" y="32" fill="#8a94a8" font-family="monospace" font-size="12">run 0142 · feature/checkout-refactor · $4.71 / cap $5.00</text>
+      <text x="700" y="32" fill="#ff6f67" font-family="monospace" font-size="12" font-weight="bold">● HALTED</text>
+      <!-- time grid -->
+      <g stroke="#1c2436" stroke-width="1">
+        <line x1="150" y1="48" x2="150" y2="300"/><line x1="290" y1="48" x2="290" y2="300"/>
+        <line x1="430" y1="48" x2="430" y2="300"/><line x1="570" y1="48" x2="570" y2="300"/>
+        <line x1="710" y1="48" x2="710" y2="300"/>
+      </g>
+      <g fill="#535d72" font-family="monospace" font-size="10">
+        <text x="146" y="318">0:30</text><text x="286" y="318">1:00</text>
+        <text x="426" y="318">1:30</text><text x="566" y="318">2:00</text><text x="706" y="318">2:30</text>
+      </g>
+      <!-- lane labels -->
+      <g fill="#f2f5fa" font-family="monospace" font-size="12">
+        <text x="24" y="82">planner</text>
+        <text x="24" y="142">builder</text>
+        <text x="24" y="202">reviewer</text>
+        <text x="24" y="262">shipper</text>
+      </g>
+      <!-- planner lane (blue) -->
+      <g>
+        <rect x="150" y="66" width="90" height="22" rx="4" fill="#6cb6ff" opacity=".9"/>
+        <rect x="250" y="66" width="46" height="22" rx="4" fill="#6cb6ff" opacity=".55"/>
+        <text x="155" y="81" fill="#06080f" font-family="monospace" font-size="10">plan · $0.62</text>
+      </g>
+      <!-- builder lane (green) -->
+      <g>
+        <rect x="300" y="126" width="150" height="22" rx="4" fill="#4ade80" opacity=".9"/>
+        <rect x="460" y="126" width="70" height="22" rx="4" fill="#4ade80" opacity=".55"/>
+        <text x="306" y="141" fill="#06080f" font-family="monospace" font-size="10">edit ×14 · $1.88</text>
+      </g>
+      <!-- reviewer lane (purple) -->
+      <g>
+        <rect x="540" y="186" width="110" height="22" rx="4" fill="#c89bff" opacity=".9"/>
+        <text x="546" y="201" fill="#06080f" font-family="monospace" font-size="10">review · $0.94</text>
+      </g>
+      <!-- shipper lane (amber) - crosses budget -->
+      <g>
+        <rect x="660" y="246" width="98" height="22" rx="4" fill="#e8b64a" opacity=".9"/>
+        <text x="666" y="261" fill="#06080f" font-family="monospace" font-size="10">ship · $1.27</text>
+      </g>
+      <!-- budget halt marker -->
+      <line x1="758" y1="48" x2="758" y2="300" stroke="#ff6f67" stroke-width="2" stroke-dasharray="6 4"/>
+      <rect x="764" y="56" width="104" height="40" rx="6" fill="#ff6f67"/>
+      <text x="774" y="73" fill="#06080f" font-family="monospace" font-size="11" font-weight="bold">BUDGET HALT</text>
+      <text x="774" y="88" fill="#06080f" font-family="monospace" font-size="10">$5.00 crossed</text>
+      <!-- nothing runs after the line -->
+      <rect x="758" y="48" width="110" height="252" fill="#ff6f67" opacity=".05"/>
+      <text x="766" y="292" fill="#535d72" font-family="monospace" font-size="10">nothing runs past here</text>
+    </svg>
+  </div>
+</header>
+
+<section class="problem" id="problem">
+  <p class="kicker">The problem</p>
+  <blockquote>“The invoice is your <span>incident report.</span>”</blockquote>
+  <p>An agent loops on a failing test at 2 a.m., burns through calls nobody sees, and the first artifact of the failure is a line item on next month's bill. No trace of which agent did what, which phase spent what, or where a human could have said no. Observability SDKs will tell you afterwards. Flightbox owns the loop — so it can stop it.</p>
+  <div class="stat-row" aria-hidden="true">
+    <div class="stat"><b class="mono" style="color:var(--red)">$0</b><span>surprise invoices</span></div>
+    <div class="stat"><b class="mono" style="color:var(--green)">100%</b><span>of calls traced</span></div>
+    <div class="stat"><b class="mono" style="color:var(--blue)">1</b><span>SQLite file per run</span></div>
+  </div>
+</section>
+
+<section id="how">
+  <p class="kicker" style="text-align:center">How it works</p>
+  <h2 class="sec">Stamp. Run. Replay &amp; govern.</h2>
+  <p class="sec-sub">Flightbox is a managed runway, not a sidecar. Deterministic Python owns the loop; your agents are bounded nodes inside it.</p>
+  <div class="steps">
+    <div class="step">
+      <p class="num">STEP 01</p>
+      <h3>Stamp the factory</h3>
+      <p>Install the OSS core into your repo. Define your pipeline — phases, agents, budgets, approval points — in plain config. Run it with <code>just</code>.</p>
+    </div>
+    <div class="step">
+      <p class="num">STEP 02</p>
+      <h3>Run through the runway</h3>
+      <p>Every tool call, prompt, and decision streams live into a SQLite trace. Budget and approval gates sit in the loop itself — when a cap is crossed or an approval times out, the run halts. Hard stop, not a warning.</p>
+    </div>
+    <div class="step">
+      <p class="num">STEP 03</p>
+      <h3>Replay &amp; govern</h3>
+      <p>Open the session-replay UI: a waterfall per run, per-phase tool-call detail, per-agent dollar attribution. Grant pending approvals from any terminal. Get cost estimates before the next run buys a single token.</p>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <p class="kicker" style="text-align:center">Features</p>
+  <h2 class="sec">Everything recorded. Nothing unbounded.</h2>
+  <div class="grid">
+    <div class="card c-blue">
+      <span class="tag">Record</span>
+      <h3>Flight recorder</h3>
+      <p>Every tool call, prompt, and decision streams live into a SQLite trace. Session-replay UI with a waterfall per run and per-phase tool-call detail — scrub through exactly what your agents did.</p>
+    </div>
+    <div class="card c-green">
+      <span class="tag">Attribute</span>
+      <h3>Cost attribution</h3>
+      <p>Per-call token and dollar breakdown, rolled up per agent, per phase, per run. Know that the reviewer costs 3× the builder before it matters.</p>
+    </div>
+    <div class="card c-red">
+      <span class="tag">Halt</span>
+      <h3>Budget gates</h3>
+      <p><span class="mono">max_run_cost</span> and per-agent <span class="mono">max_cost</span> HALT the run when crossed. The crossing call is billed and recorded — then nothing further runs. Not an alert. A stop.</p>
+    </div>
+    <div class="card c-amber">
+      <span class="tag">Approve</span>
+      <h3>Approval gates</h3>
+      <p>A chain parks on a pending approval until a human grants it — from any terminal. Silence past the timeout is a denial. Your agents never assume a yes.</p>
+    </div>
+    <div class="card c-purple">
+      <span class="tag">Forecast</span>
+      <h3>Pre-run cost estimates</h3>
+      <p>Median, p90, and worst-case cost from your own run history — before the first token is bought. A warning fires when p90 clears your cap.</p>
+    </div>
+  </div>
+
+  <div class="term" aria-label="Terminal showing just sessions output with run costs and a p90 warning">
+    <div class="term-bar" aria-hidden="true">
+      <i style="background:#ff6f67"></i><i style="background:#e8b64a"></i><i style="background:#4ade80"></i>
+      <span class="t">flightbox — zsh</span>
+    </div>
+    <pre id="termcast"><span class="line"><span class="g">$</span> <span class="w">just sessions</span></span>
+<span class="line"></span>
+<span class="line"><span class="c">  RUN    PIPELINE            PHASES  COST     STATUS</span></span>
+<span class="line"><span class="w">  0139</span>   feat/search-index   <span class="b">4/4</span>     <span class="g">$2.13</span>    <span class="g">✔ complete</span></span>
+<span class="line"><span class="w">  0140</span>   fix/rate-limiter    <span class="b">3/4</span>     <span class="a">$3.87</span>    <span class="a">⏸ awaiting approval (deploy)</span></span>
+<span class="line"><span class="w">  0141</span>   feat/checkout       <span class="b">4/4</span>     <span class="g">$1.94</span>    <span class="g">✔ complete</span></span>
+<span class="line"><span class="w">  0142</span>   feat/checkout-v2    <span class="b">3/4</span>     <span class="r">$4.71</span>    <span class="r">■ HALTED — max_run_cost $5.00</span></span>
+<span class="line"></span>
+<span class="line"><span class="g">$</span> <span class="w">just estimate feat/checkout-v3</span></span>
+<span class="line"><span class="p">  estimate from 12 prior runs:</span></span>
+<span class="line"><span class="w">  median</span> <span class="g">$2.04</span>   <span class="w">p90</span> <span class="a">$5.62</span>   <span class="w">worst</span> <span class="r">$7.90</span></span>
+<span class="line"><span class="a">  ⚠ WARNING: p90 ($5.62) clears max_run_cost ($5.00)</span></span>
+<span class="line"><span class="g">$</span> <span class="cursor" aria-hidden="true"></span></span></pre>
+  </div>
+</section>
+
+<section id="pricing">
+  <p class="kicker" style="text-align:center">Pricing</p>
+  <h2 class="sec">Start free. Pay when the whole team flies.</h2>
+  <div class="tiers">
+    <div class="tier">
+      <h3 style="color:var(--cyan)">Free</h3>
+      <p class="price">$0</p>
+      <p class="per">OSS core · forever</p>
+      <ul>
+        <li>Stamp the factory into any repo</li>
+        <li>Local SQLite trace</li>
+        <li>Engineer visualizer</li>
+      </ul>
+      <a class="btn btn-ghost" href="https://github.com/miguelsalcedo01/flightbox">Clone it</a>
+    </div>
+    <div class="tier">
+      <h3 style="color:var(--blue)">Recorder</h3>
+      <p class="price">$99</p>
+      <p class="per">per month</p>
+      <ul>
+        <li>Hosted replay across repos &amp; teammates</li>
+        <li>Plain-language timelines</li>
+        <li>Spend roll-ups</li>
+        <li>Trace retention</li>
+      </ul>
+      <a class="btn btn-ghost" href="https://github.com/miguelsalcedo01/flightbox">Get started</a>
+    </div>
+    <div class="tier featured">
+      <h3 style="color:var(--green)">Governance<span class="badge">POPULAR</span></h3>
+      <p class="price">$499</p>
+      <p class="per">per month</p>
+      <ul>
+        <li>Everything in Recorder</li>
+        <li>Budget gates &amp; hard halts</li>
+        <li>Approval workflows</li>
+        <li>Pre-run estimates &amp; alerts</li>
+        <li>Per-repo policy</li>
+      </ul>
+      <a class="btn btn-primary" href="https://github.com/miguelsalcedo01/flightbox">Get started</a>
+    </div>
+    <div class="tier">
+      <h3 style="color:var(--purple)">Enterprise</h3>
+      <p class="price">Custom</p>
+      <p class="per">talk to us</p>
+      <ul>
+        <li>Everything in Governance</li>
+        <li>SSO</li>
+        <li>SOC 2 posture</li>
+        <li>Finance exports</li>
+      </ul>
+      <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Enterprise">Contact us</a>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <p class="kicker" style="text-align:center">FAQ</p>
+  <h2 class="sec">Straight answers.</h2>
+  <details>
+    <summary>Is this an observability SDK?</summary>
+    <p>No. SDKs observe from the sidelines — they can tell you what happened, not stop it. Flightbox is a managed runway: you run your agent pipelines <em>through</em> it. Deterministic Python owns the loop and agents are bounded nodes inside it, which is why a budget gate can actually halt a run mid-flight instead of just logging that it went over.</p>
+  </details>
+  <details>
+    <summary>What happens exactly when a budget is crossed?</summary>
+    <p>The call that crosses the cap is billed and recorded — you can't un-buy tokens already in flight. Then nothing further runs. The halt, the crossing call, and the full trace up to that point are all in the recording.</p>
+  </details>
+  <details>
+    <summary>How do approvals work if I'm away from my desk?</summary>
+    <p>The chain parks on the pending approval and waits. You can grant it from any terminal. If the timeout passes in silence, that's a denial — the run does not proceed on an assumed yes.</p>
+  </details>
+  <details>
+    <summary>Where does my trace data live?</summary>
+    <p>On the free OSS core, everything is local: a SQLite trace in your repo, viewed with the local visualizer. Paid tiers add hosted replay so teammates can share timelines across repos — that's the part you pay for, not the recording itself.</p>
+  </details>
+</section>
+
+<footer>
+  <p><span class="mono">flightbox<span style="color:var(--red)">■</span>rec</span> — flight recorder + spend governor for AI agent workflows.</p>
+  <p>The core is open source under an MIT-based license. Flightbox is a fork of <em>Super Simple Software Factory</em> by IndyDevDan — not affiliated with or endorsed by him.</p>
+  <p><a href="https://github.com/miguelsalcedo01/flightbox">GitHub</a> · <a href="mailto:miguel.salcedo01@gmail.com">Contact</a></p>
+</footer>
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var lines = document.querySelectorAll('#termcast .line');
+  if(reduced){ lines.forEach(function(l){ l.classList.add('on'); }); return; }
+  function play(){
+    lines.forEach(function(l,i){
+      setTimeout(function(){ l.classList.add('on'); }, 180*i);
+    });
+  }
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ play(); io.disconnect(); }
+      });
+    },{threshold:.35});
+    io.observe(document.getElementById('termcast'));
+  } else { play(); }
+})();
+</script>
+
+</body>
+</html>
