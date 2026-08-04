@@ -15,7 +15,7 @@ export type PhaseStatus = "queued" | "running" | "success" | "fail";
 /** phases.kind — decides which lane a block renders in. */
 export type PhaseKind = "engineer" | "code" | "agent";
 
-/** events.type — the ten types tracer.py emits. */
+/** events.type — the core types tracer.py emits, plus the approval trio. */
 export type EventType =
   | "phase_start"
   | "phase_end"
@@ -26,7 +26,10 @@ export type EventType =
   | "gate_pass"
   | "gate_fail"
   | "log"
-  | "error";
+  | "error"
+  | "approval_requested"
+  | "approval_granted"
+  | "approval_denied";
 
 export interface Session {
   adw_id: string;
@@ -292,6 +295,51 @@ export type EnvelopesResponse = Envelope[];
 
 /** GET /api/sessions/:adw_id/gates */
 export type GatesResponse = GateResult[];
+
+// ── Spend roll-ups ───────────────────────────────────────────────────────────
+
+/** One workflow's spend across every non-archived run. */
+export interface CostByAdw {
+  /** sessions.adw_name, "(unnamed)" when the column or value is missing. */
+  adw_name: string;
+  runs: number;
+  total_cost: number;
+  total_tokens: number;
+  /** Mean cost per run — the "typical run" number beside the total. */
+  avg_cost: number;
+  last_run_at: string | null;
+}
+
+/**
+ * One agent's spend, summed from its agent_end payloads' `cost` — the only
+ * per-agent dollar figure the tracer records (sessions.total_cost is per run).
+ */
+export interface CostByAgent {
+  agent: string;
+  /** Lane color from agent_sessions, when the db has the column. */
+  color: string | null;
+  /** Distinct runs this agent took part in. */
+  runs: number;
+  total_cost: number;
+  total_tokens: number;
+  last_used_at: string | null;
+}
+
+/** One calendar day of spend, from date(sessions.started_at). */
+export interface CostByDay {
+  /** ISO date, e.g. "2026-08-04". */
+  day: string;
+  runs: number;
+  cost: number;
+  tokens: number;
+}
+
+/** GET /api/costs */
+export interface CostsResponse {
+  by_adw: CostByAdw[];
+  by_agent: CostByAgent[];
+  by_day: CostByDay[];
+}
 
 /** GET /api/health */
 export interface HealthResponse {

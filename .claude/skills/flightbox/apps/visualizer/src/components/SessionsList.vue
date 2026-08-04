@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { CircleDollarSign } from 'lucide-vue-next'
 import type { SessionSummary } from '../lib/types'
 import { fetchSessions } from '../lib/api'
 import { ts } from '../lib/format'
+import { costsHref } from '../lib/router'
 import SessionCard from './SessionCard.vue'
 
 const sessions = shallowRef<SessionSummary[]>([])
@@ -53,7 +55,14 @@ const ordered = computed(() =>
   <div class="sessions">
     <div v-if="apiError" class="error-bar">api unreachable — retrying {{ apiError }}</div>
 
-    <div v-if="ordered.length" class="list-head dim">{{ ordered.length }} runs</div>
+    <div class="list-head">
+      <span v-if="ordered.length" class="dim">{{ ordered.length }} runs</span>
+      <span v-else />
+      <a class="spend-link" :href="costsHref()">
+        <CircleDollarSign :size="17" :stroke-width="2" />
+        spend
+      </a>
+    </div>
 
     <div v-if="ordered.length" class="cards">
       <SessionCard
@@ -76,8 +85,29 @@ const ordered = computed(() =>
 }
 
 .list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 24px 0;
   font-size: 16px;
+}
+
+.spend-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  color: var(--dim);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px 13px;
+  background: rgba(19, 26, 38, 0.6);
+}
+
+.spend-link:hover {
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .cards {

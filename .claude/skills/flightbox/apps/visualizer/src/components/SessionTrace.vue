@@ -11,12 +11,12 @@ import type {
   Session,
   SessionUsage,
 } from '../lib/types'
-import { Bot, SquareTerminal, UserRound } from 'lucide-vue-next'
+import { BookOpen, Bot, SquareTerminal, UserRound } from 'lucide-vue-next'
 import { fetchEnvelopes, fetchEvents, fetchGates, fetchSession } from '../lib/api'
 import { axisTicks, fmtDate, payloadOk, ts } from '../lib/format'
 import { modelIcon, modelName } from '../lib/models'
 import { agentColor, hexAlpha, parseAgentStart } from '../lib/events'
-import { navigate, phaseCrumb } from '../lib/router'
+import { navigate, phaseCrumb, storyHref } from '../lib/router'
 import StatusChip from './StatusChip.vue'
 import StatChip from './StatChip.vue'
 import PhaseDetail from './PhaseDetail.vue'
@@ -441,6 +441,10 @@ function selectPhase(p: Phase) {
         <StatChip kind="read" :value="usage.read" />
         <StatChip kind="written" :value="usage.written" />
       </span>
+      <a class="story-link" :href="storyHref(props.adwId)" title="Plain-language replay of this run">
+        <BookOpen :size="17" :stroke-width="2" />
+        story
+      </a>
     </div>
 
     <div v-if="phases.length" class="waterfall">
@@ -584,6 +588,24 @@ function selectPhase(p: Phase) {
   display: inline-flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.story-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--dim);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px 13px;
+  background: rgba(19, 26, 38, 0.6);
+}
+
+.story-link:hover {
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .waterfall {

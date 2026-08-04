@@ -125,6 +125,9 @@ const server = Bun.serve({
 
     "/api/sessions": safely((req) => json(db.sessions(intQuery(req, "limit", 200)))),
 
+    // Spend roll-ups: by workflow, by agent, by day — one payload, no params.
+    "/api/costs": safely(() => json(db.costRollup())),
+
     "/api/sessions/:adw_id": safely((req) => {
       const detail = db.sessionDetail(param(req, "adw_id"));
       return detail ? json(detail) : notFound(`no session ${param(req, "adw_id")}`);

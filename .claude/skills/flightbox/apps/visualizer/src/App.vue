@@ -2,6 +2,8 @@
 import { useRoute, hrefFor, phaseCrumb } from './lib/router'
 import SessionsList from './components/SessionsList.vue'
 import SessionTrace from './components/SessionTrace.vue'
+import CostsView from './components/CostsView.vue'
+import SessionStory from './components/SessionStory.vue'
 
 const route = useRoute()
 </script>
@@ -19,12 +21,22 @@ const route = useRoute()
         </svg>
         <span class="brand">Super Simple Software Factory</span>
         <span class="sep">›</span>
-        <a :href="hrefFor()" :class="{ current: !route.adwId }">sessions</a>
+        <a :href="hrefFor()" :class="{ current: route.view === 'sessions' }">sessions</a>
+        <template v-if="route.view === 'costs'">
+          <span class="sep">›</span>
+          <span class="current">spend</span>
+        </template>
         <template v-if="route.adwId">
           <span class="sep">›</span>
-          <a :href="hrefFor(route.adwId)" :class="{ current: !route.phaseId }">{{
-            route.adwId
-          }}</a>
+          <a
+            :href="hrefFor(route.adwId)"
+            :class="{ current: route.view === 'trace' && !route.phaseId }"
+            >{{ route.adwId }}</a
+          >
+        </template>
+        <template v-if="route.view === 'story'">
+          <span class="sep">›</span>
+          <span class="current">story</span>
         </template>
         <template v-if="route.adwId && route.phaseId">
           <span class="sep">›</span>
@@ -34,8 +46,19 @@ const route = useRoute()
       <span class="live-hint"><span class="live-dot" /> live</span>
     </header>
     <main>
-      <SessionsList v-if="!route.adwId" />
-      <SessionTrace v-else :key="route.adwId" :adw-id="route.adwId" :phase-id="route.phaseId" />
+      <SessionsList v-if="route.view === 'sessions'" />
+      <CostsView v-else-if="route.view === 'costs'" />
+      <SessionStory
+        v-else-if="route.view === 'story' && route.adwId"
+        :key="`story:${route.adwId}`"
+        :adw-id="route.adwId"
+      />
+      <SessionTrace
+        v-else-if="route.adwId"
+        :key="route.adwId"
+        :adw-id="route.adwId"
+        :phase-id="route.phaseId"
+      />
     </main>
   </div>
 </template>

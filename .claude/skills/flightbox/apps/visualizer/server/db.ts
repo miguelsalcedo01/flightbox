@@ -17,6 +17,10 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import type {
   AgentSession,
   AgentStartPayload,
+  CostByAdw,
+  CostByAgent,
+  CostByDay,
+  CostsResponse,
   Envelope,
   Event,
   EventsPage,
@@ -402,6 +406,119 @@ export class FlightboxDb {
            FROM gate_results WHERE adw_id = ? ORDER BY id`,
       )
       .all(adwId);
+  }
+
+  /**
+   * Spend roll-ups across every non-archived session, three ways at once:
+   * per workflow (sessions.adw_name), per agent, and per calendar day.
+   *
+   * The per-agent dollars are NOT sessions.total_cost split up — that number
+   * only exists per run. Each agent's spend is the sum of its own agent_end
+   * payloads' `cost`, extracted with json_extract, attributed via the phase
+   * owner the event ran under.
+   */
+  costRollup(): CostsResponse {
+    const archivedFilter = `COALESCE(${this.hasColumn("sessions", "archived") ? "s.archived" : "0"}, 0) = 0`;
+    const adwNameExpr = this.hasColumn("sessions", "adw_name") ? "s.adw_name" : "NULL";
+
+    const byAdw = this.db
+      .query<CostByAdw, []>(
+        `SELECT COALESCE(${adwNameExpr}, '(unnamed)') AS adw_name,
+                COUNT(*) AS runs,
+                SUM(COALESCE(s.total_cost, 0)) AS total_cost,
+                SUM(COALESCE(s.total_tokens, 0)) AS total_tokens,
+                AVG(COALESCE(s.total_cost, 0)) AS avg_cost,
+                MAX(s.started_at) AS last_run_at
+           FROM sessions s
+          WHERE ${archivedFilter}
+          GROUP BY adw_name
+          ORDER BY total_cost DESC`,
+      )
+      .all();
+
+    // Roster first: every agent that has an agent_sessions row under a live
+    // session, with its configured color and run count.
+    const colorExpr = this.hasColumn("agent_sessions", "color") ? "a.color" : "NULL";
+    const roster = this.db
+      .query<
+        { agent: string; color: string | null; runs: number; last_used_at: string | null },
+        []
+      >(
+        `SELECT a.agent AS agent,
+                MAX(${colorExpr}) AS color,
+                COUNT(DISTINCT a.adw_id) AS runs,
+                MAX(a.last_used_at) AS last_used_at
+           FROM agent_sessions a JOIN sessions s ON s.adw_id = a.adw_id
+          WHERE ${archivedFilter}
+          GROUP BY a.agent`,
+      )
+      .all();
+
+    // Dollars per agent from agent_end payloads — the phase owner says whose
+    // turn the money was spent on.
+    const spend = this.db
+      .query<
+        { agent: string; total_cost: number; total_tokens: number; last_used_at: string | null },
+        []
+      >(
+        `SELECT p.owner AS agent,
+                SUM(COALESCE(json_extract(e.payload_json, '$.cost'), 0)) AS total_cost,
+                SUM(COALESCE(json_extract(e.payload_json, '$.usage.total_tokens'), e.tokens, 0)) AS total_tokens,
+                MAX(e.ended_at) AS last_used_at
+           FROM events e
+           JOIN phases p ON p.phase_id = e.phase_id
+           JOIN sessions s ON s.adw_id = e.adw_id
+          WHERE e.type = 'agent_end' AND p.owner IS NOT NULL AND ${archivedFilter}
+          GROUP BY p.owner`,
+      )
+      .all();
+
+    const byAgentMap = new Map<string, CostByAgent>();
+    for (const row of roster) {
+      byAgentMap.set(row.agent, {
+        agent: row.agent,
+        color: row.color,
+        runs: row.runs,
+        total_cost: 0,
+        total_tokens: 0,
+        last_used_at: row.last_used_at,
+      });
+    }
+    for (const row of spend) {
+      const entry = byAgentMap.get(row.agent);
+      if (entry) {
+        entry.total_cost = row.total_cost;
+        entry.total_tokens = row.total_tokens;
+        entry.last_used_at = entry.last_used_at ?? row.last_used_at;
+      } else {
+        // An agent with agent_end events but no agent_sessions row (older
+        // tracer, or a run that died mid-write) still spent real money.
+        byAgentMap.set(row.agent, {
+          agent: row.agent,
+          color: null,
+          runs: 0,
+          total_cost: row.total_cost,
+          total_tokens: row.total_tokens,
+          last_used_at: row.last_used_at,
+        });
+      }
+    }
+    const byAgent = [...byAgentMap.values()].toSorted((a, b) => b.total_cost - a.total_cost);
+
+    const byDay = this.db
+      .query<CostByDay, []>(
+        `SELECT date(s.started_at) AS day,
+                COUNT(*) AS runs,
+                SUM(COALESCE(s.total_cost, 0)) AS cost,
+                SUM(COALESCE(s.total_tokens, 0)) AS tokens
+           FROM sessions s
+          WHERE ${archivedFilter} AND s.started_at IS NOT NULL
+          GROUP BY day
+          ORDER BY day`,
+      )
+      .all();
+
+    return { by_adw: byAdw, by_agent: byAgent, by_day: byDay };
   }
 
   sessionCount(): number {

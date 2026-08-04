@@ -1,4 +1,5 @@
 import type {
+  CostsResponse,
   Envelope,
   EventRow,
   EventsPage,
@@ -49,6 +50,16 @@ export async function archiveSession(adwId: string, archived = true): Promise<vo
     body: JSON.stringify({ archived }),
   })
   if (!res.ok) throw new Error(`POST ${url} → ${res.status}`)
+}
+
+/** Spend roll-ups for the #/costs dashboard. */
+export async function fetchCosts(): Promise<CostsResponse> {
+  const data = (await getJson('/api/costs')) as Partial<CostsResponse>
+  return {
+    by_adw: data.by_adw ?? [],
+    by_agent: data.by_agent ?? [],
+    by_day: data.by_day ?? [],
+  }
 }
 
 export function fetchHealth(): Promise<HealthResponse> {
