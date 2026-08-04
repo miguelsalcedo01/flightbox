@@ -8,12 +8,24 @@ so a CI log reads exactly like a terminal.
 
 from __future__ import annotations
 
+import sys
+
 from rich.console import Console as RichConsole
 from rich.markup import escape
 from rich.panel import Panel
 from rich.text import Text
 
 from .data_types import EnvelopeBase, EventRecord, Phase
+
+# A default Windows console is cp1252, and the first ▶ in the banner kills the
+# whole run with UnicodeEncodeError before any phase opens. Force the streams
+# to UTF-8 where reconfigure exists; fall back silently where a stream is not
+# a real console (pipes, CI, pytest capture).
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError, OSError):
+        pass
 
 KIND_COLOR = {"engineer": "cyan", "agent": "magenta", "code": "yellow"}
 MAX_LINE = 160          # dynamic text (summaries, violations, errors) is clipped
