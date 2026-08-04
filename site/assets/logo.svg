@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Flightbox">
+  <title>Flightbox</title>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 16 H21 A9 9 0 0 0 12 25 V43 A9 9 0 0 0 21 52 H39 A9 9 0 0 0 48 43 V30" stroke="#4ade80" stroke-width="5.5"/>
+    <path d="M36 27 C43 21 49 14 54 6"  stroke="#4ade80" stroke-width="5"/>
+    <path d="M43 34 C50 30 56 25 61 19" stroke="#6cb6ff" stroke-width="5"/>
+    <path d="M47 43 C53 41 58 38 62 35" stroke="#e8b64a" stroke-width="5"/>
+  </g>
+</svg>
