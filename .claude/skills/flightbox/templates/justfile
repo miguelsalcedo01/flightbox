@@ -79,6 +79,24 @@ tail ADW_ID:
 procs ADW_ID:
     @sqlite3 {{db}} "select kind, name, pid, command, started_at from processes where adw_id='{{ADW_ID}}' and ended_at is null order by id;"
 
+# ── approvals (settle a run blocked on a human gate) ────────────────────────
+# A headless run with an approval phase parks on a pending row and polls it.
+# These settle that row from any terminal; the run notices within poll_seconds.
+
+# what is waiting on a human right now
+pending:
+    @sqlite3 {{db}} "select adw_id, name, description, requested_at from approvals where status='pending' order by requested_at;"
+
+# grant a pending approval: just approve <adw_id> <name> [who]
+approve ADW_ID NAME WHO="engineer":
+    @sqlite3 {{db}} "update approvals set status='approved', decided_by='{{WHO}}', decided_at=datetime('now') where adw_id='{{ADW_ID}}' and name='{{NAME}}' and status='pending';"
+    @sqlite3 {{db}} "select 'settled: ' || status || ' by ' || decided_by from approvals where adw_id='{{ADW_ID}}' and name='{{NAME}}';"
+
+# refuse a pending approval: just deny <adw_id> <name> [who]
+deny ADW_ID NAME WHO="engineer":
+    @sqlite3 {{db}} "update approvals set status='denied', decided_by='{{WHO}}', decided_at=datetime('now') where adw_id='{{ADW_ID}}' and name='{{NAME}}' and status='pending';"
+    @sqlite3 {{db}} "select 'settled: ' || status || ' by ' || decided_by from approvals where adw_id='{{ADW_ID}}' and name='{{NAME}}';"
+
 # ── observability UI ────────────────────────────────────────────────────────
 
 # Needs bun. The db path is passed explicitly because the server runs from the

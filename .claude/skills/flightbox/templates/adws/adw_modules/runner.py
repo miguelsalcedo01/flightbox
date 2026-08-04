@@ -13,9 +13,10 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from . import agents, git_helper
+from . import agents, approvals, git_helper
 from .console import Console
-from .data_types import AgentCall, EnvelopeBase, EventRecord, Phase, PhaseParams
+from .data_types import (AgentCall, ApprovalParams, EnvelopeBase, EventRecord,
+                         Phase, PhaseParams)
 from .utils import ensure_dir, now_iso
 
 
@@ -46,6 +47,12 @@ class PhaseHandle:
         if self.phase.params.kind != "agent":
             raise RuntimeError("ph.call() is only valid inside an agent phase")
         return agents.execute(self.run, self.phase, call)
+
+    def approval(self, params: ApprovalParams) -> str:
+        """Block until a human settles this. Returns who approved; denial or
+        timeout raises ApprovalDenied and fails the phase. Engineer-kind
+        phases only — the trace lane shows who the run is waiting on."""
+        return approvals.decide(self.run, self.phase, params)
 
 
 class Run:

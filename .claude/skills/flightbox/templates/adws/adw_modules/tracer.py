@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS processes (
   command       TEXT,                -- what the pid was, so a recycled pid is not killed by mistake
   started_at    TEXT, ended_at TEXT  -- ended_at NULL = believed alive
 );
+CREATE TABLE IF NOT EXISTS approvals (
+  approval_id   TEXT PRIMARY KEY,
+  adw_id        TEXT REFERENCES sessions,
+  phase_id      TEXT REFERENCES phases,
+  name          TEXT,                -- short id, unique within the run: "deploy"
+  description   TEXT,                -- what is being approved and why it is risky
+  details_json  TEXT,                -- evidence shown to the approver
+  status        TEXT DEFAULT 'pending',  -- pending | approved | denied | timeout
+  decided_by    TEXT,
+  requested_at  TEXT, decided_at TEXT
+);
 CREATE TABLE IF NOT EXISTS agent_sessions (
   adw_id        TEXT REFERENCES sessions,
   agent         TEXT,
@@ -226,6 +237,38 @@ class Tracer:
             (phase.phase_id, phase.adw_id, phase.seq, p.name, p.kind, p.owner,
              p.description, phase.status, phase.attempt, p.retries, phase.error,
              phase.started_at, phase.ended_at),
+        )
+
+    # ── approvals (the run writes the request; a human settles it) ──────────
+    def approval_request(self, phase: Phase, name: str, description: str,
+                         details_json: str) -> str:
+        approval_id = f"apr_{new_id(12)}"
+        self.conn.execute(
+            "INSERT INTO approvals (approval_id, adw_id, phase_id, name,"
+            " description, details_json, requested_at) VALUES (?,?,?,?,?,?,?)",
+            (approval_id, phase.adw_id, phase.phase_id, name, description,
+             details_json, now_iso()),
+        )
+        return approval_id
+
+    def approval_status(self, approval_id: str) -> tuple[str, str]:
+        """Current (status, decided_by). This is the poll — an external
+        `just approve` writes the row through its own connection; WAL means
+        this read sees it without blocking anything."""
+        row = self.conn.execute(
+            "SELECT status, decided_by FROM approvals WHERE approval_id=?",
+            (approval_id,)).fetchone()
+        return (row[0], row[1] or "") if row else ("pending", "")
+
+    def approval_decide(self, approval_id: str, approved: bool,
+                        decided_by: str) -> None:
+        """Settle a pending approval. The WHERE guards the race: a decision
+        that arrives second — from any terminal — changes nothing."""
+        status = "approved" if approved else "denied"
+        self.conn.execute(
+            "UPDATE approvals SET status=?, decided_by=?, decided_at=?"
+            " WHERE approval_id=? AND status='pending'",
+            (status, decided_by, now_iso(), approval_id),
         )
 
     # ── envelopes / gates / agent sessions ──────────────────────────────────

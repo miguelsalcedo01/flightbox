@@ -67,6 +67,25 @@ class Phase(BaseModel):
     ended_at: Optional[str] = None
 
 
+# ── Approvals (the blocking human gate) ──────────────────────────────────────
+
+class ApprovalParams(BaseModel):
+    """Everything ph.approval() needs. One object, never loose params.
+
+    An approval is a phase that a HUMAN must flip. The run inserts a pending
+    row into the `approvals` table and waits: interactively (a y/n prompt when
+    stdin is a TTY) or by polling the row until `just approve`/`just deny`
+    settles it from another terminal. No decision inside the timeout is a
+    denial — a governance gate that defaults open is not a gate.
+    """
+
+    name: str                       # short id, unique within the run: "deploy", "overspend"
+    description: str                # what is being approved and why it is risky — shown to the approver
+    details: dict[str, Any] = Field(default_factory=dict)   # evidence: cost so far, diff stat, target env
+    timeout_seconds: float = 3600.0
+    poll_seconds: float = 2.0
+
+
 # ── Envelopes (agent output types) ───────────────────────────────────────────
 
 class EnvelopeBase(BaseModel):
