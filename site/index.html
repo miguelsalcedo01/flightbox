@@ -96,9 +96,12 @@ h1,h2,h3{line-height:1.15}
 /* runway */
 .runway{opacity:0;perspective:520px;perspective-origin:50% 34%}
 .rw-plane{position:absolute;left:50%;bottom:-4%;width:min(58vw,720px);height:120vh;transform:translateX(-50%) rotateX(72deg);transform-origin:50% 100%;will-change:transform}
-.rw-center{position:absolute;left:50%;top:0;bottom:0;width:6px;transform:translateX(-50%);
+/* the strips overhang top and bottom so they can be translated a full period
+   without exposing a gap — transform keeps the scroll on the compositor */
+.rw-center{position:absolute;left:50%;top:-130px;bottom:-130px;width:6px;transform:translateX(-50%);
+  will-change:transform;
   background:repeating-linear-gradient(to bottom, rgba(238,243,251,.85) 0 46px, transparent 46px 110px)}
-.rw-rail{position:absolute;top:0;bottom:0;width:8px;
+.rw-rail{position:absolute;top:-110px;bottom:-110px;width:8px;will-change:transform;
   background:repeating-linear-gradient(to bottom, rgba(232,182,74,.95) 0 10px, transparent 10px 90px);
   box-shadow:0 0 18px rgba(232,182,74,.55)}
 .rw-rail.l{left:6%}.rw-rail.r{right:6%}
@@ -766,6 +769,10 @@ var chapName = document.getElementById('chapName');
 var chapBar = document.getElementById('chapBar');
 var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
 var tapeL = document.querySelector('.tape.left');
+var rp = runway.querySelector('.rw-plane');
+var rwCenter = runway.querySelector('.rw-center');
+var rwRailL = runway.querySelector('.rw-rail.l');
+var rwRailR = runway.querySelector('.rw-rail.r');
 var NARROW = window.matchMedia('(max-width: 640px)').matches;
 window.matchMedia('(max-width: 640px)').addEventListener('change', function(e){ NARROW = e.matches; });
 var beats = Array.prototype.slice.call(document.querySelectorAll('.beat')).map(function(el){
@@ -797,12 +804,12 @@ function render(p){
   /* phase scalars */
   var sink   = ez(clamp((p-0.10)/(ARREST-0.10),0,1));          // 0 calm -> 1 at arrest
   var arrestT= clamp((p-ARREST)/0.045,0,1);                     // the hard stop
-  var landT  = ez(clamp((p-0.82)/0.16,0,1));                    // runway resolve
+  var landT  = ez(clamp((p-0.78)/0.15,0,1));                    // runway resolve
 
-  /* horizon: climbs the frame + rolls as the sink deepens; wings level on arrest */
+  /* horizon: climbs the frame + banks as the sink deepens; wings level on arrest */
   var horizonShift = lerp(0,-30,sink);                          // vh upward
-  var roll = lerp(0,-4.2,sink)*(1-arrestT);
-  horizonWrap.style.transform = 'translateY('+horizonShift+'vh) rotate('+roll+'deg)';
+  var bank = lerp(0,-4.2,sink)*(1-arrestT);
+  horizonWrap.style.transform = 'translateY('+horizonShift+'vh) rotate('+bank+'deg)';
 
   /* stars fade as things get bad */
   stars.style.opacity = String(.8*(1-sink*.8)*(1-landT));
@@ -812,15 +819,25 @@ function render(p){
   heroArt.style.opacity = String(haA);
   heroArt.style.display = haA < .003 ? 'none' : '';
 
-  /* terrain rises, freezes at arrest, slides low for landing */
+  /* terrain keeps closing on the camera through the flare, then hands off to the deck */
   var terrY = lerp(105, 32, ez(clamp((p-0.42)/(ARREST-0.42),0,1)));
-  terrY = lerp(terrY, 74, landT);
+  terrY = lerp(terrY, 12, landT);
   terrain.style.transform = 'translateY('+terrY+'%)';
+  terrain.style.opacity = String(1-ez(clamp((p-0.80)/0.10,0,1))*0.9);
 
-  /* runway */
+  /* rolling out: the deck advances toward the camera and the markings stream past,
+     decelerating as the run comes to rest on the numbers */
   runway.style.opacity = String(landT);
-  var rp = runway.querySelector('.rw-plane');
-  rp.style.transform = 'translateX(-50%) rotateX(72deg) translateY('+lerp(18,0,landT)+'%)';
+  var rollOut = clamp((p-0.78)/0.22,0,1);
+  var travel = 1-Math.pow(1-rollOut,2.4);         // ease-out = braking to a stop
+  rp.style.transform = 'translateX(-50%) rotateX(72deg) translateY('+lerp(-16,6,travel)+'%)';
+  /* markings sweep toward the viewer; modulo the stripe period so a small
+     translate reads as unbounded travel */
+  var flow = travel*3200;
+  rwCenter.style.transform = 'translateX(-50%) translateY('+(flow%110)+'px)';
+  var railFlow = (flow*0.92)%90;
+  rwRailL.style.transform = 'translateY('+railFlow+'px)';
+  rwRailR.style.transform = 'translateY('+railFlow+'px)';
   horizonWrap.style.opacity = String(1-landT*.85);
 
   /* numbers */
