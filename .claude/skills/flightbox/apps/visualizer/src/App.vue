@@ -19,7 +19,7 @@ const route = useRoute()
           <rect x="8" y="13.5" width="20" height="5" rx="2.5" fill="#c89bff" />
           <rect x="4" y="21" width="13" height="5" rx="2.5" fill="#5ad2dd" />
         </svg>
-        <span class="brand">Super Simple Software Factory</span>
+        <span class="brand">Flightbox</span>
         <span class="sep">›</span>
         <a :href="hrefFor()" :class="{ current: route.view === 'sessions' }">sessions</a>
         <template v-if="route.view === 'costs'">
