@@ -239,6 +239,19 @@ class Tracer:
              phase.started_at, phase.ended_at),
         )
 
+    # ── cost history (the raw material for pre-run estimates) ───────────────
+    def session_cost_history(self, adw_name: str, limit: int = 50) -> list[float]:
+        """Total costs of the most recent finished runs of exactly this ADW,
+        newest first. Exact match on purpose: a chained session records
+        "adw_plan + adw_build_test", which is a different animal with a
+        different bill — its history predicts nothing about adw_plan alone."""
+        rows = self.conn.execute(
+            "SELECT total_cost FROM sessions WHERE adw_name = ?"
+            " AND ended_at IS NOT NULL AND total_cost > 0"
+            " ORDER BY started_at DESC LIMIT ?",
+            (adw_name, limit)).fetchall()
+        return [row[0] for row in rows]
+
     # ── approvals (the run writes the request; a human settles it) ──────────
     def approval_request(self, phase: Phase, name: str, description: str,
                          details_json: str) -> str:
