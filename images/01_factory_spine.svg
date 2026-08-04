@@ -120,7 +120,7 @@
     <g class="pulse">
       <rect x="360" y="440" width="380" height="74" rx="12" fill="#0F172A" stroke="#38BDF8" stroke-width="2.2"/>
     </g>
-    <text filter="url(#ts)" class="dbl mono" x="550" y="472" text-anchor="middle">adws/adw_data/sssf.db</text>
+    <text filter="url(#ts)" class="dbl mono" x="550" y="472" text-anchor="middle">adws/adw_data/flightbox.db</text>
     <text filter="url(#ts)" class="cap mono" x="550" y="496" text-anchor="middle">sqlite &#183; WAL &#183; 6 tables</text>
   </g>
 

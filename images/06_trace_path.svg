@@ -70,7 +70,7 @@
     <g class="pk">
       <rect x="586" y="110" width="248" height="180" rx="12" fill="#0F172A" stroke="#38BDF8" stroke-width="2.2"/>
     </g>
-    <text filter="url(#ts6)" class="nd mono" x="710" y="140" text-anchor="middle">sssf.db</text>
+    <text filter="url(#ts6)" class="nd mono" x="710" y="140" text-anchor="middle">flightbox.db</text>
     <text filter="url(#ts6)" class="sm mono" x="710" y="160" text-anchor="middle">WAL &#183; readers never blocked</text>
     <text filter="url(#ts6)" class="tb mono" x="606" y="190">sessions</text>
     <text filter="url(#ts6)" class="tb mono" x="606" y="212">phases</text>

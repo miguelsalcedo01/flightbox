@@ -147,12 +147,12 @@ temp/
 .netlify/
 *.tsbuildinfo
 
-# sssf runtime
+# flightbox runtime
 adws/adw_data/sessions/
 # Unanchored: a trace db is never committed, wherever it turns up. Two empty
-# ones had been tracked — adws/sssf.db and templates/adws/sssf.db, the second
+# ones had been tracked — adws/flightbox.db and templates/adws/flightbox.db, the second
 # of which would have stamped a fake trace db into every target repo.
-sssf.db*
+flightbox.db*
 
 # demo app runtime (example branch)
 apps/inkwell/inkwell.db*

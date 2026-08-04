@@ -46,7 +46,7 @@
 
   <rect x="0" y="0" width="1200" height="675" rx="14" fill="#0B0F14" stroke="#1B2431" stroke-width="1"/>
 
-  <text class="ttl" x="56" y="70" font-size="25" font-weight="700" fill="#E6E9EF">Super Simple Software Factory</text>
+  <text class="ttl" x="56" y="70" font-size="25" font-weight="700" fill="#E6E9EF">Flightbox</text>
 
   <!-- legend: the three states a phase can be read in -->
   <g class="legend" font-size="15" fill="#9AA4B2">
@@ -82,7 +82,7 @@
     <line x1="250" y1="546" x2="1110" y2="546"/>
   </g>
 
-  <!-- lane labels: the swatch is the agent's colour from sssf.config.yaml -->
+  <!-- lane labels: the swatch is the agent's colour from flightbox.config.yaml -->
   <g font-size="17" fill="#CFD6E0">
     <g class="lane l1"><rect x="62" y="232" width="13" height="13" rx="3" fill="#8B93A1"/><text x="88" y="244">engineer</text></g>
     <g class="lane l2"><rect x="62" y="320" width="13" height="13" rx="3" fill="#8B93A1"/><text x="88" y="332">code</text></g>
