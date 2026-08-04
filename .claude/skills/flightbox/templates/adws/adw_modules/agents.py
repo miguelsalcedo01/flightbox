@@ -148,7 +148,7 @@ def execute(run, phase: Phase, call: AgentCall) -> EnvelopeBase:
                 run.adw_id, "agent", agent.name, pid,
                 f"{agent.coding_agent} {agent.name} {agent.model}"),
             on_exit=lambda pid: run.tracer.process_end(run.adw_id, pid))
-        run.add_usage(result.tokens, result.cost)
+        run.add_usage(result.tokens, result.cost, agent=agent.name)
         spent.merge(result.usage)
         latest = result
         return result

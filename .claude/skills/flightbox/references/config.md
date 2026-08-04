@@ -50,6 +50,7 @@ agents:
 | `tools` | list[string] | Roster-wide tool allowlist. Every agent that omits its own `tools` inherits this. Unset = all tools usable. |
 | `protected_files` | list[string] | Paths **no** agent may modify unless it names them in its own `writes`. Default: `adws/adw_modules/`, `adws/adw_flightbox_config/`, `adws/adw_*.py` — an agent must not be able to edit the machinery that decides whether its work passed. |
 | `data_dir` | path | Runtime home. Sessions land at `{data_dir}/sessions/{adw_id}/{agent_name}/`. Default `adws/adw_data`. |
+| `max_run_cost` | float | Dollar cap for the **whole run** — every agent, phase, and retry, summed. Unset = uncapped. Crossing it raises `BudgetExceeded` from `run.add_usage`: the crossing send is billed and traced first (the record stays truthful), then the run halts before the next send. Enforcement is at call boundaries — one send is the smallest unit of spend that exists. The breach lands in the trace as an `error` event named `budget_exceeded`. |
 
 ### `observability`
 
@@ -69,6 +70,7 @@ agents:
 | `color` | no | Hex swatch (`"#a78bfa"`) for this agent's lane in the visualizer. Travels config → `agent_sessions.color` → `/api/sessions/:adw_id`, and rides the `agent_start` event so a lane is colored while the agent is still running. Unset = the UI's fallback palette. |
 | `coding_agent`, `model`, `thinking`, `color`, `harness_engineering` | no | Override the corresponding `defaults` key. |
 | `tools` | no | Allowlist. **Omitting the key means all tools usable.** A capability list, not a boundary — see `writes`. |
+| `max_cost` | no | Dollar cap for **this agent's** cumulative spend within one run, across every phase and retry it participates in. Unset = uncapped. Same boundary semantics as `defaults.max_run_cost`; a joined run (`--adw-id`) starts the counter at zero, so caps are per-invocation. Exact equality is not a breach — only strictly exceeding the cap halts. |
 | `writes` | no | What this agent may modify **in the repo**, enforced after every call. Omitted = unrestricted (still barred from `protected_files`). `[]` = no repo writes at all. A list = only those paths: a trailing `/` is a directory prefix, `*` matches within one path segment, `**` crosses segments, anything else is an exact path. Naming a `protected_files` path here is what unlocks it. **The session runtime under `data_dir` is always writable** — `writes: []` means read-only with respect to the repo, not unable to write its own report. |
 
 Output types are deliberately absent: config defines who an agent *is*; the ADW call site defines how it's *used*. One agent serves many calls — same system prompt, different user prompt + output type per call.

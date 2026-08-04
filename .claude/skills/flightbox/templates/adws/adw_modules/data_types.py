@@ -320,6 +320,12 @@ class AgentConfig(BaseModel):
     #   [...] -> only these. A trailing "/" means a directory prefix; a "*"
     #            makes it a glob; anything else is an exact path.
     writes: Optional[list[str]] = None
+    # Budget cap in dollars for this agent's cumulative spend within one run,
+    # across every phase and retry it participates in. Enforced at call
+    # boundaries (see runner.Run.add_usage): the send that crosses the cap
+    # completes and is billed, then the run halts before the next one.
+    #   None -> uncapped
+    max_cost: Optional[float] = None
 
 
 class ConfigDefaults(BaseModel):
@@ -336,6 +342,10 @@ class ConfigDefaults(BaseModel):
         "adws/adw_modules/", "adws/adw_flightbox_config/", "adws/adw_*.py",
     ])
     data_dir: str = "adws/adw_data"
+    # Budget cap in dollars for the WHOLE run — every agent, every phase,
+    # every retry, summed. None -> uncapped. Same boundary semantics as the
+    # per-agent `max_cost`: the crossing send is billed, the next never starts.
+    max_run_cost: Optional[float] = None
 
 
 class ObservabilityConfig(BaseModel):

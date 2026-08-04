@@ -19,6 +19,15 @@ from .data_types import AgentCall, EnvelopeBase, EventRecord, Phase, PhaseParams
 from .utils import ensure_dir, now_iso
 
 
+class BudgetExceeded(RuntimeError):
+    """A spend cap was crossed. Raised from add_usage, AFTER the crossing send
+    is billed and traced — enforcement is at call boundaries, because a coding
+    agent bills per send and a subprocess mid-send cannot be un-spent. The
+    raise unwinds through run.phase(), which fails the phase and finalizes the
+    session, so the next send never starts. That is the governance guarantee:
+    the cap stops the run, it does not merely report the overrun."""
+
+
 class PhaseHandle:
     def __init__(self, run: "Run", phase: Phase):
         self.run = run
@@ -49,6 +58,10 @@ class Run:
         self.phases: list[Phase] = []
         self.tokens = 0
         self.cost = 0.0
+        # Per-agent dollars this run, for the per-agent max_cost cap. Keyed by
+        # agent name; a joined run (--adw-id) starts these at zero, so caps are
+        # per-invocation, not per-lifetime-of-session.
+        self.agent_cost: dict[str, float] = {}
         self._seq = tracer.max_phase_seq(adw_id)   # a joined run continues the sequence
         self.repo_root = git_helper.repo_root()    # where every agent is spawned to work
         self.session_dir = ensure_dir(Path(cfg.defaults.data_dir) / "sessions" / adw_id)
@@ -63,10 +76,45 @@ class Run:
         self._agent_map_path.write_text(json.dumps(self.agent_map, indent=2))
 
     # ── usage (run totals mirror what the tracer accumulates in sqlite) ─────
-    def add_usage(self, tokens: int, cost: float) -> None:
+    def add_usage(self, tokens: int, cost: float, agent: str = "") -> None:
+        """Bill one send, then enforce the spend caps.
+
+        Ordering matters: the money is already spent, so it is recorded first —
+        the trace and the db stay truthful even on the send that crosses a cap.
+        Only then does the check raise, halting the run before the next send.
+        """
         self.tokens += tokens
         self.cost += cost
         self.tracer.session_add_usage(self.adw_id, tokens, cost)
+        if agent:
+            self.agent_cost[agent] = self.agent_cost.get(agent, 0.0) + cost
+        self._enforce_budget(agent)
+
+    def _enforce_budget(self, agent: str) -> None:
+        """Raise BudgetExceeded if a configured cap has been crossed."""
+        breaches = []
+        cap = self.cfg.defaults.max_run_cost
+        if cap is not None and self.cost > cap:
+            breaches.append(f"run spend ${self.cost:.4f} exceeds max_run_cost ${cap:.4f}")
+        if agent:
+            spec = next((a for a in self.cfg.agents if a.name == agent), None)
+            agent_cap = spec.max_cost if spec else None
+            spent = self.agent_cost.get(agent, 0.0)
+            if agent_cap is not None and spent > agent_cap:
+                breaches.append(f"agent {agent!r} spend ${spent:.4f} "
+                                f"exceeds max_cost ${agent_cap:.4f}")
+        if not breaches:
+            return
+        phase_id = self.phases[-1].phase_id if self.phases else ""
+        self.tracer.event(EventRecord(
+            adw_id=self.adw_id, phase_id=phase_id,
+            type="error", name="budget_exceeded",
+            payload={"breaches": breaches, "agent": agent,
+                     "run_cost": self.cost,
+                     "agent_cost": self.agent_cost,
+                     "max_run_cost": self.cfg.defaults.max_run_cost}))
+        self.console.note("BUDGET EXCEEDED — halting run: " + "; ".join(breaches))
+        raise BudgetExceeded("; ".join(breaches))
 
     # ── the phase primitive ─────────────────────────────────────────────────
     @contextmanager

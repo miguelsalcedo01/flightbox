@@ -11,7 +11,7 @@ Flightbox is a managed runway for agent workflows (ADWs — AI Developer Workflo
 
 - **Flight recorder.** Every event streams into a SQLite trace DB while the run is live: sessions, phases, tool calls (one readable row per call, with args, result, duration, and outcome), envelopes, gate results, and process IDs. Files stay the raw record; the DB is the queryable mirror. A read-only replay UI (`.claude/skills/flightbox/apps/visualizer/`) shows sessions, a trace waterfall, and per-phase tool-call detail.
 - **Cost attribution.** Per-call token and dollar breakdowns (input / output / cache / reasoning), accumulated per agent, per phase, per session. You can answer "what did this run cost, and which agent spent it" with one query.
-- **Governance.** Per-agent write boundaries enforced in code with automatic rollback, protected paths no agent may touch, gates as the definition of done, and bounded retry loops. Spend caps and approval phases are the active roadmap — see `FLIGHTBOX_PLAN.md`.
+- **Governance.** Spend caps that *stop the run*: `max_run_cost` on the roster and `max_cost` per agent, enforced at call boundaries — the crossing send is billed and traced, then no further send starts. Plus per-agent write boundaries enforced in code with automatic rollback, protected paths no agent may touch, gates as the definition of done, and bounded retry loops. Approval phases and pre-run cost estimates are the active roadmap — see `FLIGHTBOX_PLAN.md`.
 
 ## Install
 
