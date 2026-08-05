@@ -57,6 +57,36 @@ sqlite3 adws/adw_data/flightbox.db "select adw_id, status, substr(request,1,60),
 
 Early but real: orchestration, live trace, session replay (engineer waterfall + plain-language story view), cost attribution and roll-ups, budget gates with approach warnings, approval phases, pre-run estimates, and monthly budget projection all work today. The hosted multi-repo dashboard, alert delivery, and team accounts are in progress.
 
+## What is free, and what will cost money
+
+Stated up front so there are never any surprises, and so you can rely on it when you build
+on this.
+
+**Free forever, MIT, in this repository:**
+
+- the recorder — every tool call, prompt and dollar
+- the trace database, and its **documented schema and file format**
+- the local session-replay UI and spend roll-ups
+- **budget caps, including the hard mid-run halt**
+- approval gates and pre-run cost estimates
+
+**The halt is free and always will be.** A budget cap you have to buy before it protects
+you is a hostage, not a safety feature — and a governor that only some of your runs have
+is worse than useless, because you stop checking. It ships enabled on every install.
+
+**What will cost money** is Flightbox Cloud: the org-wide layer that proves the policy
+held across every repo and every developer, after the fact — hosted history, policy
+distribution, spend attribution, retention, and a signed audit export a client's
+compliance team will accept. It does not exist yet, and it will be a separate closed-source
+product. Nothing currently in this repository moves into it.
+
+**Two commitments:**
+
+1. **The licence on this repository will never be revoked.** What is MIT here stays MIT.
+   Whatever you build on it, you keep.
+2. **Your trace data is yours.** The schema and format stay open and documented. Flightbox
+   will never make you pay to read your own recordings.
+
 ## Credits & license
 
 MIT — see [`LICENSE`](LICENSE).
