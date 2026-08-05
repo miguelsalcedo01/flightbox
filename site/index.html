@@ -220,7 +220,11 @@ h1,h2,h3{line-height:1.15}
 .tier.t-free{border-top-color:var(--cyan)}   .tier.t-free h3{color:var(--cyan)}
 .tier.t-rec{border-top-color:var(--blue)}    .tier.t-rec h3{color:var(--blue)}
 .tier.t-gov{border-top-color:var(--phos)}    .tier.t-gov h3{color:var(--phos)}
+.tier.t-ag{border-top-color:var(--amber)}    .tier.t-ag h3{color:var(--amber)}
 .tier.t-ent{border-top-color:var(--purple)}  .tier.t-ent h3{color:var(--purple)}
+.tier .band{margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;color:var(--faint);line-height:1.7}
+.tier .band b{color:var(--text);font-weight:700}
 .tier.featured{background:#0c1526;border-color:rgba(74,222,128,.35);box-shadow:0 0 44px rgba(74,222,128,.08)}
 .badge{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;background:var(--phos);color:#06110a;
   padding:.18rem .5rem;border-radius:3px;margin-left:.6rem;vertical-align:middle}
@@ -483,52 +487,69 @@ footer p{max-width:72ch;margin:.4rem auto}
 <section class="section tall" id="pricing">
   <div class="wrap center">
     <p class="kicker">Pricing</p>
-    <h2 class="sec">The core is free. Forever.</h2>
-    <p class="sec-sub">Recording, replay, budget gates, approvals and cost estimates are all in the open-source core — yours today, at no cost, under MIT. Paid plans are founding-member places in <b>Flightbox Cloud</b>, the hosted layer for teams. Cloud is in active development.</p>
+    <h2 class="sec">The governor is free. Forever.</h2>
+    <p class="sec-sub">Recording, replay, budget caps and the hard mid-run halt are all in the open-source core — yours today, at no cost, on every install. Paid plans are founding-member places in <b>Flightbox Cloud</b>: the layer that proves the policy held, across your whole org, after the fact. Priced by the agent spend you put under governance, never per seat.</p>
 
     <div class="notice">
       <p><b>Read this before you pay.</b> Flightbox Cloud has not shipped yet. A founding
       membership funds its development and locks your rate for the life of your subscription —
-      it does not unlock anything in the open-source core, because nothing in the core is locked.
-      Everything Flightbox does today, it does for free. Cancel any time.</p>
+      it does not unlock anything in the core, because nothing in the core is locked. The halt
+      that stops a runaway agent is free and always will be. Cancel any time.</p>
     </div>
 
     <div class="tiers">
       <div class="tier t-free featured">
-        <h3>Core<span class="badge">EVERYTHING, TODAY</span></h3>
+        <h3>Core<span class="badge">FREE FOREVER</span></h3>
         <p class="price">$0</p>
-        <p class="per">OPEN SOURCE · MIT · FOREVER</p>
+        <p class="per">OPEN SOURCE · SELF-HOSTED · NO LIMIT</p>
         <ul>
           <li>Stamp the factory into any repo</li>
           <li>Full trace of every tool call, prompt &amp; dollar</li>
-          <li>Session replay UI + spend roll-ups</li>
-          <li>Budget gates that halt the run</li>
+          <li><b>Budget caps that halt the run mid-flight</b></li>
           <li>Approval gates &amp; pre-run cost estimates</li>
+          <li>Session replay UI + spend roll-ups</li>
         </ul>
         <a class="btn btn-primary" href="https://github.com/miguelsalcedo01/flightbox">Install it free →</a>
       </div>
       <div class="tier t-rec">
-        <h3>Recorder<span class="badge ghost">FOUNDING</span></h3>
-        <p class="price">$99</p>
-        <p class="per">PER MONTH · $990/YR · RATE LOCKED</p>
+        <h3>Solo<span class="badge ghost">FOUNDING</span></h3>
+        <p class="price">$29</p>
+        <p class="per">PER MONTH · $290/YR · RATE LOCKED</p>
+        <p class="band">Governs up to <b>$1,500</b>/mo of agent spend</p>
         <ul>
           <li>Everything in Core, free forever</li>
-          <li class="soon">Hosted replay across repos &amp; teammates</li>
-          <li class="soon">Spend roll-ups across every project</li>
-          <li class="soon">Trace retention &amp; history</li>
+          <li class="soon">Hosted sync &amp; cross-machine history</li>
+          <li class="soon">30-day retention</li>
+          <li class="soon">Cost-per-run analytics</li>
+          <li class="soon">Email &amp; webhook alerts</li>
         </ul>
-        <a class="btn btn-ghost" href="https://buy.stripe.com/7sY5kC5hEbiU4UZemg4Vy00">Become a founding member</a>
+        <a class="btn btn-ghost" href="https://buy.stripe.com/14AdR84dA4Uw3QVce84Vy02">Become a founding member</a>
       </div>
       <div class="tier t-gov">
-        <h3>Governance<span class="badge ghost">FOUNDING</span></h3>
+        <h3>Team<span class="badge ghost">FOUNDING</span></h3>
+        <p class="price">$149</p>
+        <p class="per">PER MONTH · $1,490/YR · RATE LOCKED</p>
+        <p class="band">Governs up to <b>$10,000</b>/mo · unlimited seats</p>
+        <ul>
+          <li>Everything in Solo</li>
+          <li class="soon">Org-wide policy across every repo</li>
+          <li class="soon">Spend attribution by dev, project &amp; branch</li>
+          <li class="soon">90-day retention</li>
+          <li class="soon">Slack alerts &amp; halt-reason reporting</li>
+        </ul>
+        <a class="btn btn-ghost" href="https://buy.stripe.com/dRmcN45hE86Iafjce84Vy03">Become a founding member</a>
+      </div>
+      <div class="tier t-ag">
+        <h3>Agency<span class="badge ghost">FOUNDING</span></h3>
         <p class="price">$499</p>
         <p class="per">PER MONTH · $4,990/YR · RATE LOCKED</p>
+        <p class="band">Governs up to <b>$40,000</b>/mo · unlimited seats</p>
         <ul>
-          <li>Everything in Recorder</li>
-          <li class="soon">Org-wide policy across every repo</li>
-          <li class="soon">Team approval routing</li>
-          <li class="soon">Threshold alerts — Slack, webhook, email</li>
-          <li class="soon">Finance export &amp; cost-center mapping</li>
+          <li>Everything in Team</li>
+          <li class="soon">Multi-client workspaces, isolated</li>
+          <li class="soon">Signed, immutable audit export per client</li>
+          <li class="soon">White-label reports</li>
+          <li class="soon">SSO, RBAC &amp; audit logs</li>
         </ul>
         <a class="btn btn-ghost" href="https://buy.stripe.com/7sY6oG9xUfzafzD2Dy4Vy01">Become a founding member</a>
       </div>
@@ -536,8 +557,8 @@ footer p{max-width:72ch;margin:.4rem auto}
 
     <div class="ent-strip">
       <div class="ent-copy">
-        <h3>Enterprise</h3>
-        <p>Everything in Governance, plus SSO, SOC&nbsp;2 posture and private hosting — scoped with you, priced per org. Also in development; talk to me early and you shape it.</p>
+        <h3>Enterprise — from $1,500/mo</h3>
+        <p>Self-hosted control plane, unlimited governed spend, SCIM, custom retention, SOC&nbsp;2 posture and a support SLA — scoped with you, billed annually. Also in development; talk to me early and you shape it.</p>
       </div>
       <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Enterprise">Contact us</a>
     </div>
@@ -701,8 +722,16 @@ footer p{max-width:72ch;margin:.4rem auto}
         <p>Entirely on your machine: a SQLite trace inside your repo, read by a local UI. Nothing is sent anywhere — there is no account and no server involved. Flightbox Cloud will add an <em>optional</em> hosted store so teammates can share timelines across repos; until you opt into that, your traces never leave your disk.</p>
       </details>
       <details>
-        <summary>What exactly do I get for $99 or $499 today?</summary>
-        <p>A locked-in rate and a founding place in Flightbox Cloud — plus the knowledge that you funded it. You do <strong>not</strong> get extra features in the core, because the core has no locked features: budget gates, approval gates, cost estimates, replay and roll-ups are all in the free MIT release right now. If you want the software, take it for free. Pay only if you want the hosted team layer to exist and want your price fixed before it does.</p>
+        <summary>What exactly do I get for $29, $149 or $499 today?</summary>
+        <p>A locked-in rate and a founding place in Flightbox Cloud — plus the knowledge that you funded it. You do <strong>not</strong> get extra features in the core, because the core has no locked features: budget caps, the halt, approval gates, cost estimates, replay and roll-ups are all in the free MIT release right now. If you want the software, take it for free. Pay only if you want the org-wide layer to exist and want your price fixed before it does.</p>
+      </details>
+      <details>
+        <summary>Why is the halt free? Isn't that the whole product?</summary>
+        <p>It's the whole <em>point</em>, which is exactly why it shouldn't be behind a paywall. A budget cap you have to buy before it protects you is a hostage, not a safety feature — and a governor that only some runs have is worse than useless, because you stop checking. So the stop is free on every install, forever. What costs money is proving it: showing your client's compliance team, or your CFO, that the policy held across every repo and every developer, months later, in a form they'll accept. That's a different job, and it's the one Cloud does.</p>
+      </details>
+      <details>
+        <summary>What counts as "governed spend"?</summary>
+        <p>The dollars your agents actually spend on runs that Flightbox is governing — the same number the recorder already sums for you. Not your Flightbox bill, not your total cloud bill. Plans are banded by it rather than by seats because seats are meaningless here: the thing consuming the product is an agent, not a person. Go over your band and you're billed $12 per additional $1,000 governed, and I'll nudge you to move up after three months. <strong>Your governor is never switched off for a billing reason</strong> — halting your halt over an invoice would be indefensible.</p>
       </details>
       <details>
         <summary>When does Flightbox Cloud ship?</summary>
