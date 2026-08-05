@@ -78,11 +78,10 @@ def main() -> int:
     # tuned.
     #
     # --upgrade refreshes the engine only. It is deliberately NOT the default and
-    # NOT unconditional: adw_modules/ is where a fork's local changes live (a
-    # customized quality.py is the common one), and silently reverting someone's
-    # edits during an unrelated install would be a worse bug than the one this
-    # fixes. Opt in, then read `git diff` — that is the safety net, so upgrade on
-    # a clean tree.
+    # NOT unconditional: adw_modules/ is where a fork's local changes live, and
+    # silently reverting someone's edits during an unrelated install would be a
+    # worse bug than the one this fixes. Opt in, then read `git diff` — that is
+    # the safety net, so upgrade on a clean tree.
     if args.upgrade:
         upgraded: list = []
         stamp(TEMPLATES / "adws" / "adw_modules", root / "adws" / "adw_modules",
@@ -90,7 +89,7 @@ def main() -> int:
         if upgraded:
             print(f"upgraded engine ({len(upgraded)} files in adws/adw_modules/)")
             print("  review with: git diff adws/adw_modules/")
-            print("  local changes there (e.g. a customized quality.py) were overwritten.")
+            print("  any local changes to those files were overwritten.")
         stamped.extend(upgraded)
 
     stamp(TEMPLATES / "adws", root / "adws", args.force, stamped, skipped)

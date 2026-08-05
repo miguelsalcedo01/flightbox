@@ -33,7 +33,7 @@ The two `*_engineering` dirs mirror the two config keys of the same name: `promp
 
 Re-running is safe. `install.py` skips **every** file that already exists — your config, your prompts, and previously stamped code alike — and reports what it skipped, so a second run doubles as a drift check.
 
-To pick up engine fixes without re-answering setup, use **`--upgrade`**: it refreshes `adws/adw_modules/` only and leaves your config, prompts and data untouched. That is the flag you want for an ordinary upgrade. It *does* overwrite local edits inside `adw_modules/` — a customized `quality.py` is the usual one — so run it on a clean tree and read `git diff adws/adw_modules/` afterwards.
+To pick up engine fixes without re-answering setup, use **`--upgrade`**: it refreshes `adws/adw_modules/` only and leaves your config, prompts and data untouched. That is the flag you want for an ordinary upgrade. It *does* overwrite any local edits inside `adw_modules/`, so run it on a clean tree and read `git diff adws/adw_modules/` afterwards.
 
 `--force` is the blunt instrument: it overwrites ALL existing stamped files, **including `flightbox.config.yaml` and `prompt_engineering/`**. Commit or back up user-owned edits first.
 
