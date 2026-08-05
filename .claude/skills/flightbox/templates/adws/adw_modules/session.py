@@ -12,7 +12,7 @@ import signal
 import sys
 from pathlib import Path
 
-from . import estimates
+from . import estimates, policy
 from .data_types import FLIGHTBOXConfig
 from .runner import Run
 from .tracer import Tracer
@@ -48,6 +48,9 @@ def ensure(cfg: FLIGHTBOXConfig, adw_id: str | None = None) -> Run:
                          " ".join([Path(sys.argv[0]).name, *sys.argv[1:]]))
     _finalize_when_killed(run)
     run.console.session_started(adw_id, run.engineer)
+    # Settle the caps before anything can spend against them: once per run, and
+    # not one line of it on an install with no `cloud:` block. See policy.py.
+    policy.apply(run)
     # What this ADW usually costs, said before it spends — history read back
     # at launch, with a warning when the p90 already clears max_run_cost —
     # and where the month stands, when a month_budget draws that line.

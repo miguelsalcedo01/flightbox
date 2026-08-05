@@ -175,6 +175,7 @@ def _select(conn: sqlite3.Connection, table: str, adw_id: str) -> list[dict]:
 # An allowlist cannot leak a key added upstream later; a blocklist silently would.
 GOVERNANCE_EVENTS = {
     "budget_exceeded", "budget_warning", "month_budget", "cost_estimate", "not_accepted",
+    "policy_applied",
 }
 #
 # These are the keys the producers ACTUALLY write, checked against
@@ -193,6 +194,10 @@ GOVERNANCE_KEYS = {
     "month", "budget", "daily_pace", "days_remaining", "projected", "likely_over",
     # not_accepted
     "reason",
+    # policy_applied  (adw_modules/policy.py) — the cap that was actually in
+    # force and which side it came from. Without these an export can say a run
+    # halted but not that the org's own cap is what stopped it.
+    "month_budget", "require_approval_phases", "source",
 }
 
 

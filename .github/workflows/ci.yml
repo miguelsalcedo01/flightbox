@@ -15,3 +15,8 @@ jobs:
       # non-zero on failure, so uv needs no project setup to run them.
       - run: uv run tests/test_cloud_config.py
       - run: uv run tests/test_metadata_privacy.py
+      - run: uv run tests/test_policy_merge.py
+      # The verifier ships with no dependencies so anyone auditing an export can
+      # run it on a stock Node. Its test runs on the runner's own Node for the
+      # same reason: an install step here would hide a dependency creeping in.
+      - run: node tests/test_verify_export.mjs

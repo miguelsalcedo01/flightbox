@@ -372,6 +372,10 @@ class ConfigDefaults(BaseModel):
     # month-to-date, the last-7-days daily pace, and where that pace lands the
     # month, so the engineer sees the line long before anything crosses it.
     month_budget: Optional[float] = None
+    # Phases a human must sign off before they run. Set here or distributed by
+    # an org policy (see adw_modules/policy.py), where the two are UNIONed —
+    # neither side can drop a phase the other insists on a human seeing.
+    require_approval_phases: list[str] = Field(default_factory=list)
 
 
 class ObservabilityConfig(BaseModel):
