@@ -73,7 +73,11 @@ h1,h2,h3{line-height:1.15}
   opacity:.8}
 
 /* hero art — the recorder, trails live */
-.hero-art{object-fit:cover;object-position:34% 60%;opacity:.5}
+/* width/height are load-bearing here, not belt-and-braces. `.layer` sets inset:0, which
+   stretches a div but not a replaced element: an <img> left at auto width keeps its
+   intrinsic 1376x768 and object-fit has no box to fit into. On any viewport wider than
+   the file the art stopped short and left a strip of bare background down the edge. */
+.hero-art{width:100%;height:100%;object-fit:cover;object-position:34% 60%;opacity:.5}
 
 /* horizon + pitch ladder */
 .horizon-wrap{top:-60%;bottom:-60%;display:flex;flex-direction:column;justify-content:center;transform-origin:50% 50%}
