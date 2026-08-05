@@ -107,7 +107,11 @@ MIGRATIONS = [("agent_sessions", "color", "TEXT"),
               ("sessions", "adw_name", "TEXT"),
               ("agent_sessions", "context_tokens", "INTEGER"),
               ("agent_sessions", "context_window", "INTEGER"),
-              ("sessions", "archived", "INTEGER DEFAULT 0")]
+              ("sessions", "archived", "INTEGER DEFAULT 0"),
+              # Per-agent spend used to live only in memory on Run, so "which agent
+              # costs the most" could not be answered from the trace afterwards.
+              ("agent_sessions", "tokens", "INTEGER DEFAULT 0"),
+              ("agent_sessions", "cost", "REAL DEFAULT 0")]
 
 
 class Tracer:
@@ -179,6 +183,24 @@ class Tracer:
         self.conn.execute(
             "UPDATE sessions SET total_tokens=total_tokens+?, total_cost=total_cost+? WHERE adw_id=?",
             (tokens, cost, adw_id),
+        )
+
+    def agent_add_usage(self, adw_id: str, agent: str, tokens: int, cost: float) -> None:
+        """Accumulate one agent's spend onto its row.
+
+        Without this, per-agent cost lived only in memory on Run and vanished when the
+        process ended — so the trace could say what a run cost but never which agent
+        spent it. Upserts, because usage can arrive before the agent row exists.
+        """
+        if not agent:
+            return
+        self.conn.execute(
+            "INSERT INTO agent_sessions (adw_id, agent, tokens, cost, created_at)"
+            " VALUES (?,?,?,?,?)"
+            " ON CONFLICT(adw_id, agent) DO UPDATE SET"
+            "   tokens=COALESCE(agent_sessions.tokens,0)+excluded.tokens,"
+            "   cost=COALESCE(agent_sessions.cost,0)+excluded.cost",
+            (adw_id, agent, tokens, cost, now_iso()),
         )
 
     # ── processes (adw_id → pid, so a hung run can be found and killed) ─────

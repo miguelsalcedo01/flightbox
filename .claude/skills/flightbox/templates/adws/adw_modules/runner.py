@@ -100,6 +100,9 @@ class Run:
         self.tracer.session_add_usage(self.adw_id, tokens, cost)
         if agent:
             self.agent_cost[agent] = self.agent_cost.get(agent, 0.0) + cost
+            # Persist it too: the in-memory tally dies with the process, and a trace
+            # that cannot say which agent spent the money is only half a record.
+            self.tracer.agent_add_usage(self.adw_id, agent, tokens, cost)
         self._enforce_budget(agent)
 
     def _enforce_budget(self, agent: str) -> None:

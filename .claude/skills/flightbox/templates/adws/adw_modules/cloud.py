@@ -58,7 +58,7 @@ WANTED: dict[str, set[str]] = {
                      "created_at"},
     "approvals": {"approval_id", "adw_id", "phase_id", "name", "status", "decided_by",
                   "requested_at", "decided_at"},
-    "agent_sessions": {"adw_id", "agent", "coding_agent", "session_id"},
+    "agent_sessions": {"adw_id", "agent", "coding_agent", "session_id", "tokens", "cost"},
 }
 
 
