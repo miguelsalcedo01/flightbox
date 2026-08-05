@@ -165,6 +165,59 @@ def _select(conn: sqlite3.Connection, table: str, adw_id: str) -> list[dict]:
     return [dict(zip(cols, row)) for row in conn.execute(sql, (adw_id,)).fetchall()]
 
 
+# Governance events carry numbers, not content: what the cap was, what was spent,
+# which scope crossed it. Under `metadata` those numbers are the whole point of
+# syncing — a halt with its figures stripped can report THAT a run stopped but not
+# that the limit you set was the thing that stopped it, which is the one claim the
+# record exists to support.
+#
+# So these events keep a payload, rebuilt from an allowlist rather than filtered.
+# An allowlist cannot leak a key added upstream later; a blocklist silently would.
+GOVERNANCE_EVENTS = {
+    "budget_exceeded", "budget_warning", "month_budget", "cost_estimate", "not_accepted",
+}
+#
+# These are the keys the producers ACTUALLY write, checked against
+# runner.py (_enforce_budget / _warn_if_approaching), estimates.py
+# (CostEstimate, MonthStatus) and Run.finish. Guessing at names here is worse
+# than useless: an allowlisted key that is never emitted is dead, and a real key
+# left out silently drops a number the dashboard then renders as $0.00.
+GOVERNANCE_KEYS = {
+    # budget_exceeded
+    "breaches", "agent", "run_cost", "agent_cost", "max_run_cost",
+    # budget_warning
+    "scope", "threshold", "spent", "cap", "fraction",
+    # cost_estimate  (CostEstimate + two extras)
+    "adw_name", "runs", "median_cost", "p90_cost", "worst_cost", "likely_halt",
+    # month_budget  (MonthStatus)
+    "month", "budget", "daily_pace", "days_remaining", "projected", "likely_over",
+    # not_accepted
+    "reason",
+}
+
+
+def _governance_payload(event: dict) -> str | None:
+    """Return a reduced payload for a governance event, or None to strip it.
+
+    `reason` (from not_accepted) is the one free-text field allowed through. It is
+    written by the ADW itself, not by a model and not from a file, so it cannot
+    carry source; it is truncated anyway, because "cannot" is a claim worth not
+    relying on.
+    """
+    if event.get("name") not in GOVERNANCE_EVENTS:
+        return None
+    try:
+        data = json.loads(event.get("payload_json") or "{}")
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    kept = {k: v for k, v in data.items() if k in GOVERNANCE_KEYS}
+    if isinstance(kept.get("reason"), str):
+        kept["reason"] = kept["reason"][:300]
+    return json.dumps(kept) if kept else None
+
+
 def build_payload(db_path: Path, adw_id: str, mode: str) -> dict:
     """Assemble one run's payload straight out of the local trace."""
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -176,7 +229,11 @@ def build_payload(db_path: Path, adw_id: str, mode: str) -> dict:
         if mode != "full":
             # The line that keeps prompts and source on this machine.
             for e in events:
-                e.pop("payload_json", None)
+                keep = _governance_payload(e)
+                if keep is None:
+                    e.pop("payload_json", None)
+                else:
+                    e["payload_json"] = keep
         gates = _select(conn, "gate_results", adw_id)
         for g in gates:                       # local calls it `id`/`gate`; Cloud wants gate_id/name
             if "gate_id" not in g and "id" in g:
