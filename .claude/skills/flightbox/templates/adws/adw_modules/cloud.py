@@ -77,6 +77,39 @@ class CloudConfig:
         return self.mode in ("metadata", "full")
 
 
+SYNC_MODES = ("off", "metadata", "full")
+
+
+def normalize_sync_mode(value: Any) -> str:
+    """The one parser for `cloud.sync`. Imported by data_types so the config a RUN
+    sees and the config the SYNC CLI sees can never drift apart — they disagreed
+    once already, and the result was a customer who believed they were syncing
+    while nothing ever left the machine.
+
+    yaml 1.1 resolves bare `off`/`no` to False and `on`/`yes`/`true` to True, so
+    the boolean spellings arrive here having lost which word was written. They are
+    deliberately NOT symmetric:
+
+      False -> "off"   `off` asks for the existing default. Reading it as such
+                       costs nothing and is what the config comments document.
+      True  -> error   `on` asks to start transmitting to a remote server without
+                       saying WHAT to transmit. metadata and full differ in whether
+                       prompts and source leave the machine; that is not a guess
+                       anyone should make on the user's behalf. Fail loudly and
+                       make them name the mode.
+    """
+    if value is False:
+        return "off"
+    if value is True:
+        raise ValueError(
+            "cloud.sync: `on`/`yes`/`true` is ambiguous - write `metadata` (costs and "
+            "timings only) or `full` (also sends prompts and source) explicitly")
+    mode = str(value if value is not None else "off").strip().lower() or "off"
+    if mode not in SYNC_MODES:
+        raise ValueError(f"cloud.sync must be off|metadata|full, got {mode!r}")
+    return mode
+
+
 def load_config(cfg: Any) -> CloudConfig:
     """Read the `cloud:` block off an already-parsed config object or dict."""
     block: Any = None
@@ -87,9 +120,10 @@ def load_config(cfg: Any) -> CloudConfig:
     if not block:
         return CloudConfig()
     get = block.get if isinstance(block, dict) else lambda k, d=None: getattr(block, k, d)
-    mode = str(get("sync", "off") or "off").lower()
-    if mode not in ("off", "metadata", "full"):
-        raise CloudError(f"cloud.sync must be off|metadata|full, got {mode!r}")
+    try:
+        mode = normalize_sync_mode(get("sync", "off"))
+    except ValueError as err:
+        raise CloudError(str(err)) from err
     return CloudConfig(mode=mode, url=str(get("url", DEFAULT_URL) or DEFAULT_URL).rstrip("/"),
                        workspace=get("workspace", None))
 

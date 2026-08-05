@@ -31,7 +31,13 @@ The two `*_engineering` dirs mirror the two config keys of the same name: `promp
 
 ## Idempotency
 
-Re-running is safe. `install.py` skips **every** file that already exists — your config, your prompts, and previously stamped code alike — and reports what it skipped, so a second run doubles as a drift check. To refresh stamped code (`adw_modules/`, the starter `adw_*.py`) to the skill's current version, run with `--force` — but know that `--force` overwrites ALL existing stamped files, including `flightbox.config.yaml` and `prompt_engineering/`, so commit or back up user-owned edits first.
+Re-running is safe. `install.py` skips **every** file that already exists — your config, your prompts, and previously stamped code alike — and reports what it skipped, so a second run doubles as a drift check.
+
+To pick up engine fixes without re-answering setup, use **`--upgrade`**: it refreshes `adws/adw_modules/` only and leaves your config, prompts and data untouched. That is the flag you want for an ordinary upgrade. It *does* overwrite local edits inside `adw_modules/` — a customized `quality.py` is the usual one — so run it on a clean tree and read `git diff adws/adw_modules/` afterwards.
+
+`--force` is the blunt instrument: it overwrites ALL existing stamped files, **including `flightbox.config.yaml` and `prompt_engineering/`**. Commit or back up user-owned edits first.
+
+A pure-skip install can never deliver a fix, which is the gap `--upgrade` exists to close: an old `data_types.py` silently dropped the `cloud:` config block, and the people who most needed the fix were precisely the ones who already had the file.
 
 ## Post-install checklist
 

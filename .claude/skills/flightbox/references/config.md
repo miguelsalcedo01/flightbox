@@ -53,6 +53,40 @@ agents:
 | `max_run_cost` | float | Dollar cap for the **whole run** — every agent, phase, and retry, summed. Unset = uncapped. Crossing it raises `BudgetExceeded` from `run.add_usage`: the crossing send is billed and traced first (the record stays truthful), then the run halts before the next send. Enforcement is at call boundaries — one send is the smallest unit of spend that exists. The breach lands in the trace as an `error` event named `budget_exceeded`. Approaching a cap warns before it halts: crossing 75% and then 90% of any cap prints a BUDGET WARNING and traces a `budget_warning` event — each threshold speaks once per scope, because a send cannot be stopped mid-flight and the useful thing is seeing the line while a send boundary is still ahead. |
 | `month_budget` | float | Advisory monthly spend budget in dollars, across every run this trace db records. A **budget warns and projects; a cap halts** — the month boundary is the wrong place to kill a half-finished run. Every launch reports month-to-date spend, the last-7-days daily pace, and the projected month-end (`month_budget` trace event), warning at 75% spent, when exhausted, or when the current pace lands the month over. `just month` prints the same standing on demand. |
 
+**What a fresh install ships with.** A newly stamped repo does not arrive uncapped:
+`max_run_cost: 25.00` and `month_budget: 100.00` are active in the stamped
+`flightbox.config.yaml`. The field defaults above (unset = uncapped) still describe
+the *schema* — they are what you get if you delete the lines. This is deliberate: an
+ungoverned default makes a flight recorder behave like no flight recorder at all
+until someone remembers to configure one, and the runs that most need a cap are the
+ones nobody was watching. If a run halts on a budget, that is the product working;
+raise the number or comment it out.
+
+One unit gotcha: with `coding_agent: claude_code` the dollar figure comes from what
+Claude Code reports for the run. On a Claude subscription that is *API-equivalent*
+cost — what those tokens would have cost on the API — not money billed to you. It is
+the right signal for catching a runaway, but it is not your invoice.
+
+### `cloud`
+
+Optional, paid, and entirely additive — see [flightbox.dev](https://flightbox.dev).
+Nothing in the free core reads this to decide whether to run, cap, or halt; it only
+decides where a finished trace may *additionally* go.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sync` | `off` \| `metadata` \| `full` | Default `off`. `metadata` sends costs, timings and the shape of each run; prompts and source stay on the machine. `full` also sends payloads — choose it deliberately. |
+| `url` | string | Cloud endpoint. Default `https://api.flightbox.dev`. |
+| `workspace` | string | Informational only; the token determines the workspace. |
+
+The token is read from `FLIGHTBOX_CLOUD_TOKEN` (or `~/.config/flightbox/credentials`),
+never from this file. Push with `uv run adws/cloud_sync.py`.
+
+`sync: off` is fine to write literally — yaml resolves it to a boolean and it is read
+back as "off". `sync: on` is **rejected**, not guessed: yaml throws away which word you
+wrote, and `on` does not say whether you meant `metadata` or `full`. Those differ in
+whether your prompts and source leave the machine, so name the mode.
+
 ### `observability`
 
 | Field | Type | Meaning |

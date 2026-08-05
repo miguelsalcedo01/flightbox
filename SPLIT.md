@@ -80,6 +80,14 @@ Pro package registers itself with no config.
    and no governor is installed, the run must refuse to start — not run uncapped. A budget
    cap that silently does nothing is worse than no cap, because the user believes they are
    protected.
+
+   Amended: a stamped repo now ships `max_run_cost: 25.00` **active**, so "a cap is set"
+   is true of every fresh install. Read literally, this rule would make every new install
+   refuse to start the day the governor moved behind a plugin boundary. The rule is about
+   a cap the USER chose, so it needs to distinguish a user-set cap from the shipped
+   default — or the governor must never become separable at all. The second is the
+   simpler promise and the one now being made: **the halt is free core, permanently, and
+   is not a plugin.** Revisit only if that ever changes.
 2. **Keep the upstream MIT notice in `LICENSE`.** Required for the derived core, and
    required in any Pro distribution that ships derived code.
 3. **The site copy currently says budget gates and approvals are free forever.** It must

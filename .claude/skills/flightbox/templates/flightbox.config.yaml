@@ -47,12 +47,45 @@ defaults:
   # Spend governance. A crossed cap HALTS the run: the send that crosses it is
   # billed and traced (the record stays truthful), then no further send starts.
   # Enforcement is at call boundaries — one send is the smallest unit of spend.
-  # Per-agent caps go on the agent entry as `max_cost`. Both default to uncapped.
-  # max_run_cost: 5.00             # dollars, the whole run: every agent, phase, retry
-  # A BUDGET warns and projects; a CAP halts. month_budget is advisory: every
-  # launch reports month-to-date spend, the last-7-days daily pace, and the
-  # projected month-end, warning at 75% / exhausted / pace-says-over.
-  # month_budget: 100.00           # dollars per calendar month, all runs in this repo
+  # Per-agent caps go on the agent entry as `max_cost`.
+  #
+  # These ship ON, deliberately. An ungoverned default would mean a fresh install
+  # behaves exactly like no flight recorder at all until someone remembers to
+  # configure it — and the runs that most need a cap are the ones nobody was
+  # watching. $25 is loose enough that an ordinary plan→build→review run with a
+  # couple of retries never notices it, and tight enough that a loop burning
+  # tokens at 3am stops. Raise it, lower it, or comment it out; an uncapped run
+  # is a choice worth making on purpose rather than by default.
+  #
+  # UNITS, because this surprises people: with coding_agent: claude_code the
+  # figure comes from what Claude Code reports for the run. On a Claude
+  # subscription that is API-EQUIVALENT cost — what these tokens would have cost
+  # on the API — not money billed to you. It is the right number for spotting a
+  # runaway; it is not your invoice.
+  max_run_cost: 25.00              # dollars, the whole run: every agent, phase, retry
+  # A BUDGET warns and projects; a CAP halts. month_budget is advisory — it never
+  # stops a run. Every launch reports month-to-date spend, the last-7-days daily
+  # pace, and the projected month-end, warning at 75% / exhausted / pace-says-over.
+  month_budget: 100.00             # dollars per calendar month, all runs in this repo
+
+# Flightbox Cloud — optional, paid, and entirely additive.
+#
+# Everything above works forever without this: the caps, the halt, the trace, the
+# replay UI. They are the free core and always will be. Cloud does not gate them
+# and can never turn them off.
+#
+# What it adds is other people. Runs from every machine and every CI job in one
+# place, so you can show someone who wasn't there that the cap held — after the
+# fact, from anywhere. If you are one person on one laptop, you do not need it.
+#
+#   cloud:
+#     sync: metadata               # metadata | full | off (default: off)
+#     url: https://api.flightbox.dev
+#
+# `metadata` sends costs, timings and the shape of each run. Your prompts and your
+# source never leave the machine. `full` includes payloads — choose it deliberately.
+# The token goes in the environment, never in this file:  FLIGHTBOX_CLOUD_TOKEN
+# Push with:  uv run adws/cloud_sync.py        More: https://flightbox.dev
 
 observability:
   db: adws/adw_data/flightbox.db        # tracer writes here directly; the UI polls it

@@ -379,10 +379,40 @@ class ObservabilityConfig(BaseModel):
     poll_ms: int = 500
 
 
+class CloudSyncConfig(BaseModel):
+    """The optional `cloud:` block. Off unless asked for.
+
+    This exists in the schema so the two readers of that block agree. cloud_sync.py
+    parses the yaml itself, so sync worked whether or not this class was here; the
+    run does NOT — it sees this parsed config, and pydantic drops keys it has no
+    field for. Without this, a paying customer's `sync: metadata` vanished on the
+    way in and the halt still told them to go buy what they had already bought.
+    """
+
+    sync: Literal["off", "metadata", "full"] = "off"
+    url: str = "https://api.flightbox.dev"
+    workspace: str = ""              # informational; the token decides the workspace
+
+    @field_validator("sync", mode="before")
+    @classmethod
+    def _normalize(cls, v):
+        """Delegated, not reimplemented. `cloud.py` owns the rules; a second copy
+        here is how the two readers of this block drifted apart in the first place."""
+        from .cloud import normalize_sync_mode
+        return normalize_sync_mode(v)
+
+    @property
+    def enabled(self) -> bool:
+        return self.sync != "off"
+
+
 class FLIGHTBOXConfig(BaseModel):
     defaults: ConfigDefaults = Field(default_factory=ConfigDefaults)
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
     agents: list[AgentConfig] = Field(default_factory=list)
+    # Never a gate. Nothing in the free core reads this to decide whether to run,
+    # cap, or halt — it only decides where a finished trace may additionally go.
+    cloud: CloudSyncConfig = Field(default_factory=CloudSyncConfig)
 
 
 # ── Tracing ──────────────────────────────────────────────────────────────────

@@ -141,10 +141,10 @@ class Run:
         held afterwards, from another machine, to someone who wasn't there.
         """
         try:
-            cloud_cfg = getattr(self.cfg, "cloud", None)
-            mode = getattr(cloud_cfg, "sync", None) if cloud_cfg else None
-            if isinstance(cloud_cfg, dict):
-                mode = cloud_cfg.get("sync")
+            cfg = self.cfg
+            cloud_cfg = cfg.get("cloud") if isinstance(cfg, dict) else getattr(cfg, "cloud", None)
+            mode = (cloud_cfg.get("sync") if isinstance(cloud_cfg, dict)
+                    else getattr(cloud_cfg, "sync", None))
             if mode in ("metadata", "full"):
                 return                       # already a customer
             self.console.note(
