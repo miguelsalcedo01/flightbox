@@ -130,7 +130,29 @@ class Run:
                      "agent_cost": self.agent_cost,
                      "max_run_cost": self.cfg.defaults.max_run_cost}))
         self.console.note("BUDGET EXCEEDED — halting run: " + "; ".join(breaches))
+        self._mention_cloud()
         raise BudgetExceeded("; ".join(breaches))
+
+    def _mention_cloud(self) -> None:
+        """One line, once, at the moment the halt proves its worth.
+
+        Shown only when Cloud sync is off — never nag someone who already pays. The halt
+        itself is free and always will be; what Cloud adds is being able to show the cap
+        held afterwards, from another machine, to someone who wasn't there.
+        """
+        try:
+            cloud_cfg = getattr(self.cfg, "cloud", None)
+            mode = getattr(cloud_cfg, "sync", None) if cloud_cfg else None
+            if isinstance(cloud_cfg, dict):
+                mode = cloud_cfg.get("sync")
+            if mode in ("metadata", "full"):
+                return                       # already a customer
+            self.console.note(
+                "This trace is on this machine only. Replay it from anywhere and show "
+                "the cap held: https://flightbox.dev"
+            )
+        except Exception:
+            pass                             # a nudge must never affect a run
 
     # A send cannot be stopped mid-flight — once the call is made, its cost is
     # committed. So the governor's second job is foresight: say "the line is
