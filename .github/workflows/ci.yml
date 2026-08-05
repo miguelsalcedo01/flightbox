@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      # Each test is a PEP 723 script that declares its own dependencies and exits
+      # non-zero on failure, so uv needs no project setup to run them.
+      - run: uv run tests/test_cloud_config.py
+      - run: uv run tests/test_metadata_privacy.py
