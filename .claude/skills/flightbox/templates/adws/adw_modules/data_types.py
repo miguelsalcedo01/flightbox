@@ -376,6 +376,10 @@ class ConfigDefaults(BaseModel):
     # an org policy (see adw_modules/policy.py), where the two are UNIONed —
     # neither side can drop a phase the other insists on a human seeing.
     require_approval_phases: list[str] = Field(default_factory=list)
+    # Jev's advisory risk note on approvals. Opt-in: off unless set to true,
+    # because it sends the approval's name/description/details to a beta
+    # third-party model. Jev never grants or denies; see approvals.py.
+    jev_advisor: Optional[bool] = None
 
 
 class ObservabilityConfig(BaseModel):

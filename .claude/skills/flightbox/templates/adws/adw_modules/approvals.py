@@ -23,11 +23,54 @@ import json
 import sys
 import time
 
+from . import jev
 from .data_types import ApprovalParams, EventRecord, Phase
 
 
 class ApprovalDenied(RuntimeError):
     """The human said no — or nobody said yes inside the timeout."""
+
+
+def _advise_risk(run, phase: Phase, approval_id: str, params: ApprovalParams) -> None:
+    """Ask Jev's opinion of this approval's risk and print/trace it.
+
+    HARD CONSTRAINT: this function only ever informs. It cannot grant, deny,
+    or shorten the approval — nothing it computes is read by the wait/decide
+    path below. On any failure it traces `advisor_unavailable` with a short
+    reason and returns; it must never raise out of decide() and must never
+    delay the y/N prompt by more than the timeout.
+    """
+    if not jev.advisor_enabled(run.cfg.defaults.jev_advisor):
+        return
+    # Everything below is wrapped in one bare except: an advisor must never
+    # raise out of decide() and must never delay the y/N prompt beyond the
+    # timeout passed to jev.ask, whatever goes wrong — including the tracer
+    # calls that report the outcome.
+    try:
+        try:
+            state = jev.risk_state(params.name, params.description, params.details)
+            answers = jev.ask(state, jev.risk_question(), timeout=3.0)
+            risk = jev.interpret_risk(answers)
+            if risk is None:
+                raise jev.JevUnavailable("jev answered in an unrecognized shape")
+        except Exception as error:
+            run.tracer.event(EventRecord(
+                adw_id=run.adw_id, phase_id=phase.phase_id,
+                type="log", name="advisor_unavailable",
+                payload={"approval_id": approval_id, "advisor": "jev",
+                         "reason": str(error)[:200]}))
+            return
+        run.tracer.event(EventRecord(
+            adw_id=run.adw_id, phase_id=phase.phase_id,
+            type="log", name="approval_risk",
+            payload={"approval_id": approval_id, "risk": risk["risk"],
+                     "confidence": risk["confidence"],
+                     "probabilities": risk["probabilities"], "advisor": "jev"}))
+        confidence = risk["confidence"]
+        conf_text = f" — confidence {confidence:.2f}" if isinstance(confidence, (int, float)) else ""
+        run.console.note(f"risk (advisory, jev): {risk['risk'].upper()}{conf_text}")
+    except Exception:
+        pass                          # an advisor must never break the gate it advises on
 
 
 def decide(run, phase: Phase, params: ApprovalParams) -> str:
@@ -52,6 +95,9 @@ def decide(run, phase: Phase, params: ApprovalParams) -> str:
     run.console.note(f"APPROVAL REQUIRED — {params.name}: {params.description}")
     for key, value in params.details.items():
         run.console.note(f"  {key}: {value}")
+    # Jev's opinion, if any — advisory only, never read by the wait below.
+    # See _advise_risk's docstring for the hard constraint this preserves.
+    _advise_risk(run, phase, approval_id, params)
 
     if sys.stdin.isatty():
         answer = input(f"approve {params.name!r}? [y/N] ").strip().lower()

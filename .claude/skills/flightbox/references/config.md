@@ -52,6 +52,18 @@ agents:
 | `data_dir` | path | Runtime home. Sessions land at `{data_dir}/sessions/{adw_id}/{agent_name}/`. Default `adws/adw_data`. |
 | `max_run_cost` | float | Dollar cap for the **whole run** — every agent, phase, and retry, summed. Unset = uncapped. Crossing it raises `BudgetExceeded` from `run.add_usage`: the crossing send is billed and traced first (the record stays truthful), then the run halts before the next send. Enforcement is at call boundaries — one send is the smallest unit of spend that exists. The breach lands in the trace as an `error` event named `budget_exceeded`. Approaching a cap warns before it halts: crossing 75% and then 90% of any cap prints a BUDGET WARNING and traces a `budget_warning` event — each threshold speaks once per scope, because a send cannot be stopped mid-flight and the useful thing is seeing the line while a send boundary is still ahead. |
 | `month_budget` | float | Advisory monthly spend budget in dollars, across every run this trace db records. A **budget warns and projects; a cap halts** — the month boundary is the wrong place to kill a half-finished run. Every launch reports month-to-date spend, the last-7-days daily pace, and the projected month-end (`month_budget` trace event), warning at 75% spent, when exhausted, or when the current pace lands the month over. `just month` prints the same standing on demand. |
+| `jev_advisor` | bool | Opt-in advisory risk note on approvals. Off unless set to `true`; also needs `OPENROUTER_API_KEY`. See below. |
+
+**Jev's advisory risk note.** Off by default. With `jev_advisor: true` and an
+`OPENROUTER_API_KEY` set, each `ph.approval()` asks Jev (TypeSafe AI — a beta third-party
+decision model, not an LLM, reached through OpenRouter's Decisions API) for a
+low/medium/high risk read. Jev is sent that approval's own `name`, `description` and
+`details` and nothing else, and the answer prints as
+`risk (advisory, jev): HIGH — confidence 0.91` right above the y/N prompt. Jev cannot
+grant, deny or shorten anything — a human still disposes every approval. If Jev is
+unreachable, passes its three-second timeout, or answers in a shape that cannot be read,
+the note is skipped, one `advisor_unavailable` trace event records why, and the run
+proceeds exactly as it would with the advisor off.
 
 **What a fresh install ships with.** A newly stamped repo does not arrive uncapped:
 `max_run_cost: 25.00` and `month_budget: 100.00` are active in the stamped
