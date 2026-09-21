@@ -526,9 +526,9 @@ footer p{max-width:72ch;margin:.4rem auto}
         <p class="band">Governs up to <b>$1,500</b>/mo of agent spend</p>
         <ul>
           <li>Everything in Core, free forever</li>
-          <li class="soon">Hosted sync &amp; cross-machine history</li>
-          <li class="soon">30-day retention</li>
-          <li class="soon">Cost-per-run analytics</li>
+          <li>Hosted sync &amp; cross-machine history</li>
+          <li>30-day retention</li>
+          <li>Cost-per-run analytics</li>
           <li class="soon">Email &amp; webhook alerts</li>
         </ul>
         <a class="btn btn-ghost" href="https://buy.stripe.com/14AdR84dA4Uw3QVce84Vy02">Become a founding member</a>
@@ -540,9 +540,10 @@ footer p{max-width:72ch;margin:.4rem auto}
         <p class="band">Governs up to <b>$10,000</b>/mo · unlimited seats</p>
         <ul>
           <li>Everything in Solo</li>
-          <li class="soon">Org-wide policy across every repo</li>
-          <li class="soon">Spend attribution by dev, project &amp; branch</li>
-          <li class="soon">90-day retention</li>
+          <li>Org-wide policy across every repo</li>
+          <li>Spend attribution by dev, project &amp; branch</li>
+          <li>Roles, invites &amp; seat management</li>
+          <li>90-day retention</li>
           <li class="soon">Slack alerts &amp; halt-reason reporting</li>
         </ul>
         <a class="btn btn-ghost" href="https://buy.stripe.com/dRmcN45hE86Iafjce84Vy03">Become a founding member</a>
@@ -555,11 +556,11 @@ footer p{max-width:72ch;margin:.4rem auto}
         <ul>
           <li>Everything in Team</li>
           <li class="soon">Multi-client workspaces, isolated</li>
-          <li class="soon">Signed, immutable audit export per client</li>
+          <li>Signed, immutable audit export</li>
           <li class="soon">White-label reports</li>
-          <li class="soon">SSO, RBAC &amp; audit logs</li>
+          <li class="soon">SSO</li>
         </ul>
-        <a class="btn btn-ghost" href="https://buy.stripe.com/7sY6oG9xUfzafzD2Dy4Vy01">Become a founding member</a>
+        <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Agency">Talk to me first</a>
       </div>
     </div>
 
@@ -571,14 +572,15 @@ footer p{max-width:72ch;margin:.4rem auto}
       <a class="btn btn-ghost" href="mailto:miguel.salcedo01@gmail.com?subject=Flightbox%20Enterprise">Contact us</a>
     </div>
     <div class="waitlist">
-      <p class="gate-note" style="margin-top:0"><span class="soon-key"></span> NOT YET AVAILABLE — SHIPS WITH FLIGHTBOX CLOUD</p>
+      <p class="gate-note" style="margin-top:0"><span class="soon-key"></span> NOT BUILT YET — FOUNDING MEMBERS GET IT AS IT SHIPS</p>
       <form id="wlForm" novalidate>
         <label class="wl-label" for="wlEmail">Your email</label>
         <input id="wlEmail" type="email" name="email" required autocomplete="email">
-        <button class="btn btn-primary" type="submit" id="wlBtn">Tell me when Cloud ships</button>
+        <input id="wlWebsite" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+        <button class="btn btn-primary" type="submit" id="wlBtn">Keep me posted</button>
       </form>
       <p class="wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
-      <p class="wl-hint">No charge, no account — this opens your mail app so you send it yourself, which means I never collect anything you didn't choose to send. One reply when Cloud opens, and nothing else.</p>
+      <p class="wl-hint">No charge, no account. I store your email address and nothing else, and use it only for Flightbox Cloud news. Reply to any message to be removed.</p>
     </div>
     <p class="gate-note">14 DAYS BEFORE YOUR FIRST CHARGE · <b>CANCEL ANY TIME</b> · RATE LOCKED FOR THE LIFE OF YOUR SUBSCRIPTION</p>
   </div>
@@ -727,11 +729,11 @@ footer p{max-width:72ch;margin:.4rem auto}
       </details>
       <details>
         <summary>Where does my trace data live?</summary>
-        <p>Entirely on your machine: a SQLite trace inside your repo, read by a local UI. Nothing is sent anywhere — there is no account and no server involved. Flightbox Cloud will add an <em>optional</em> hosted store so teammates can share timelines across repos; until you opt into that, your traces never leave your disk.</p>
+        <p>Entirely on your machine: a SQLite trace inside your repo, read by a local UI. Nothing is sent anywhere — there is no account and no server involved. Flightbox Cloud is an <em>optional</em> hosted store so teammates can share timelines across repos; until you opt into that, your traces never leave your disk.</p>
       </details>
       <details>
         <summary>What exactly do I get for $29, $149 or $499 today?</summary>
-        <p>A locked-in rate and a founding place in Flightbox Cloud — plus the knowledge that you funded it. You do <strong>not</strong> get extra features in the core, because the core has no locked features: budget caps, the halt, approval gates, cost estimates, replay and roll-ups are all in the free MIT release right now. If you want the software, take it for free. Pay only if you want the org-wide layer to exist and want your price fixed before it does.</p>
+        <p>A working Flightbox Cloud workspace and a rate locked for as long as you stay. Every bullet above without an amber box is live now: hosted sync, cross-machine history and cost analytics on Solo; org-wide policy, spend attribution, roles and seats on Team; signed audit export on Agency. Bullets with an amber box are not built yet, and founding members get them as they ship at no extra charge. You do <strong>not</strong> get extra features in the core, because the core has no locked features: budget caps, the halt, approval gates, cost estimates, replay and roll-ups are all in the free MIT release. If you only want the software, take it for free.</p>
       </details>
       <details>
         <summary>Why is the halt free? Isn't that the whole product?</summary>
@@ -792,9 +794,9 @@ else if ('IntersectionObserver' in window){
 } else { sections.forEach(function(s){ s.classList.add('in'); }); }
 
 /* ---------- Cloud waitlist ----------
-   Interim transport: opens the visitor's mail client with the message prefilled,
-   so a signup always reaches a real inbox. Swap the submit handler for a POST to
-   /api/waitlist once the KV namespace exists — see WAITLIST.md. */
+   POSTs to the Cloud Worker, which stores the address in D1. If the request
+   cannot be made at all, falls back to the visitor's own mail client so a
+   signup still reaches a real inbox. */
 (function(){
   var form=document.getElementById('wlForm');
   if(!form) return;
@@ -809,12 +811,36 @@ else if ('IntersectionObserver' in window){
       input.focus();
       return;
     }
-    var subject='Flightbox Cloud waitlist',
-        body='Add me to the Flightbox Cloud waitlist.\n\nEmail: '+email+'\n';
-    window.location.href='mailto:miguel.salcedo01@gmail.com?subject='+
-      encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-    msg.className='wl-msg ok';
-    msg.textContent='✓ YOUR MAIL APP IS OPENING — HIT SEND AND YOU’RE ON THE LIST';
+    var btn=document.getElementById('wlBtn'), trap=document.getElementById('wlWebsite');
+    function viaMail(){
+      var subject='Flightbox Cloud waitlist',
+          body='Add me to the Flightbox Cloud waitlist.\n\nEmail: '+email+'\n';
+      window.location.href='mailto:miguel.salcedo01@gmail.com?subject='+
+        encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+      msg.className='wl-msg ok';
+      msg.textContent='✓ YOUR MAIL APP IS OPENING — HIT SEND AND YOU’RE ON THE LIST';
+    }
+    btn.disabled=true;
+    msg.className='wl-msg';
+    msg.textContent='SENDING…';
+    fetch('https://api.flightbox.dev/v1/waitlist',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({email:email,source:'site-pricing',website:trap?trap.value:''})
+    }).then(function(r){
+      btn.disabled=false;
+      if(r.ok){
+        msg.className='wl-msg ok';
+        msg.textContent='✓ YOU’RE ON THE LIST';
+        form.reset();
+      }else if(r.status===429){
+        msg.className='wl-msg err';
+        msg.textContent='TOO MANY TRIES FROM HERE — GIVE IT AN HOUR';
+      }else if(r.status===400){
+        msg.className='wl-msg err';
+        msg.textContent='THAT EMAIL DOESN’T LOOK RIGHT — CHECK IT?';
+      }else{ viaMail(); }
+    }).catch(function(){ btn.disabled=false; viaMail(); });
   });
 })();
 
